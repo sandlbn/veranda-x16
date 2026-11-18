@@ -1,0 +1,10 @@
+# Veranda desk accessory header (tools/vpack.py)
+name        = Text Manager
+class       = Text Manager
+type        = deskacc
+version     = 1.0
+author      = Veranda
+description = An album of texts: add the clipboard's, read them, copy one back.
+mode        = keep
+api         = 1
+icon        = text.pbm

@@ -1,0 +1,41 @@
+' TRY ... CATCH ... END TRY, ERR, ERR$, ERL, ERROR
+TRY
+  x = 1 / 0
+CATCH
+  PRINT "1:"; ERR; ERR$; ERL
+END TRY
+TRY
+  ERROR 200, "No birds"
+CATCH
+  PRINT "2:"; ERR; ERR$
+END TRY
+TRY
+  ERROR 210
+CATCH
+  PRINT "3:"; ERR; ERR$
+END TRY
+TRY
+  ERROR 9
+CATCH
+  PRINT "4:"; ERR; ERR$
+END TRY
+TRY
+  PRINT "fine"
+CATCH
+  PRINT "never"
+END TRY
+TRY
+  TRY
+    x$ = "a" + 1
+  CATCH
+    PRINT "inner"; ERR
+    ERROR 201, "again"
+  END TRY
+CATCH
+  PRINT "outer"; ERR; ERR$
+END TRY
+TRY
+  y = SQR(-1)
+END TRY
+PRINT "TRY without CATCH: on"
+50 TRY: z% = 40000: CATCH: PRINT "line"; ERL; ERR: END TRY

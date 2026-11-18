@@ -1,0 +1,295 @@
+= Errors
+The run-time errors: the editor shows one in the status bar, with its line
+in red (Error 13: Type mismatch (line 57)); TRY ... CATCH and ON ERROR GOTO
+catch them: ERR is the number, ERR$ the message, ERL the line. Check finds the
+other kind before a program runs: see @{Check messages}.
+
+@{Error 1} @{Error 2} @{Error 3} @{Error 4} @{Error 5} @{Error 6} @{Error 7}
+@{Error 8} @{Error 9} @{Error 10} @{Error 11} @{Error 12} @{Error 13}
+@{Error 14} @{Error 15} @{Error 16} @{Error 17} @{Error 18} @{Error 19}
+@{Error 20} @{Error 21} @{Error 22} @{Error 23} @{Error 24} @{Error 25}
+@{Error 26} @{Error 50} @{Error 51} @{Error 52} @{Error 53} @{Error 54}
+@{Error 55} @{Error 56} @{Error 57} @{Error 58} @{Error 59} @{Error 60}
+
+See also: @TRY @ERR @ERL @ERROR @Contents
+
+= Error 1
+Stopped
+
+Ctrl+C, the STOP key, Run > Stop or a STOP statement stopped the program.
+
+See also: @Errors
+
+= Error 2
+Syntax error
+
+A statement the runtime could not read: a word missing or one too many.
+
+See also: @Errors
+
+= Error 3
+RETURN without GOSUB
+
+RETURN came with no GOSUB to go back to.
+
+See also: @Errors
+
+= Error 4
+Out of DATA
+
+READ found no more DATA items: the program read more than its DATA lines
+hold. RESTORE starts them again.
+
+See also: @Errors
+
+= Error 5
+Illegal quantity
+
+A number out of the range the statement or function takes: a negative
+length, a colour above 15, CHR$(300).
+
+See also: @Errors
+
+= Error 6
+Overflow
+
+A number too large for a float, or an integer (%) outside -32768 .. 32767
+where an integer is needed.
+
+See also: @Errors
+
+= Error 7
+Out of memory
+
+The program needs more RAM banks than there are (its arrays, its strings,
+OPTION MEMORY), or more room for names in main RAM.
+
+See also: @Errors
+
+= Error 8
+Undefined line
+
+GOTO, GOSUB or THEN names a line number the program has not got.
+
+See also: @Errors
+
+= Error 9
+Subscript out of range
+
+An array index below 0 or above its DIM.
+
+See also: @Errors
+
+= Error 10
+Array already dimensioned
+
+DIM of an array that is already dimensioned; REDIM changes its size.
+
+See also: @Errors
+
+= Error 11
+Division by zero
+
+A division (/, \ or MOD) by zero.
+
+See also: @Errors
+
+= Error 12
+Not an array
+
+A name used with an index that is not an array.
+
+See also: @Errors
+
+= Error 13
+Type mismatch
+
+A string where a number is needed, or a number where a string is.
+
+See also: @Errors
+
+= Error 14
+String too long
+
+A string longer than 255 characters.
+
+See also: @Errors
+
+= Error 15
+Formula too complex
+
+An expression nested too deep for the value stack: split it with a variable.
+
+See also: @Errors
+
+= Error 16
+Stack overflow
+
+Too many FOR, GOSUB, procedure or TRY levels at once (about 300): a
+recursion that does not end?
+
+See also: @Errors
+
+= Error 17
+RESUME without error
+
+RESUME outside an ON ERROR handler.
+
+See also: @Errors
+
+= Error 18
+NEXT without FOR
+
+NEXT with no FOR open.
+
+See also: @Errors
+
+= Error 19
+Wrong number of arguments
+
+A SUB, FUNCTION or built-in function called with the wrong number of
+arguments.
+
+See also: @Errors
+
+= Error 20
+Not available yet
+
+A statement this version of VeraBASIC has not got yet.
+
+See also: @Errors
+
+= Error 21
+Made by a newer VeraBASIC
+
+The program document was made by a newer VeraBASIC than this one.
+
+See also: @Errors
+
+= Error 22
+Not inside a SUB
+
+EXIT SUB, RETURN with a value or LOCAL outside a SUB or FUNCTION.
+
+See also: @Errors
+
+= Error 23
+BYREF needs a variable
+
+A BYREF parameter was given a value, not a variable.
+
+See also: @Errors
+
+= Error 24
+Font not found
+
+FONT names a font that is not in /VERANDA/FONTS.
+
+See also: @Errors
+
+= Error 25
+No such window
+
+A window number with no WINDOW open.
+
+See also: @Errors
+
+= Error 26
+Too many menus or items
+
+More menus or menu items than Veranda's menu bar holds.
+
+See also: @Errors
+
+= Error 50
+File not found
+
+No file of that name in the folder (ERRFILE: the kernel's error).
+
+See also: @Errors
+
+= Error 51
+Too many files
+
+More than three files open at once.
+
+See also: @Errors
+
+= Error 52
+Bad file number
+
+A file number outside 1 .. 255.
+
+See also: @Errors
+
+= Error 53
+File not open
+
+PRINT #, INPUT # or CLOSE of a file number that is not open.
+
+See also: @Errors
+
+= Error 54
+File already open
+
+OPEN of a file number that is open already.
+
+See also: @Errors
+
+= Error 55
+Bad file mode
+
+A file opened for reading written to, or the other way round, or a mode
+other than "r", "w", "a", "m".
+
+See also: @Errors
+
+= Error 56
+Input past end
+
+INPUT #, LINE INPUT # or GET # past the file's end: test EOF first.
+
+See also: @Errors
+
+= Error 57
+Disk error
+
+The card or the folder said no (ERRFILE: the kernel's error).
+
+See also: @Errors
+
+= Error 58
+File exists
+
+A file or folder of that name is there already.
+
+See also: @Errors
+
+= Error 59
+Bad picture
+
+A picture string that is not one (PICTURE$ makes them).
+
+See also: @Errors
+
+= Error 60
+Not in a DIALOG
+
+LABEL, FIELD or BUTTON outside a DIALOG block.
+
+See also: @Errors
+
+= Check messages
+Check (Ctrl+K), and Run before a program starts, read the whole program
+first: these are found then, with the line they are in, and F8 goes to the
+next. The tokenizer: Unexpected character, Line too long, String too long,
+Number too big, Name too long, Line number out of range, Too many names,
+Program too big. The blocks: X without Y (NEXT without FOR), Y missing for
+X in line N (END IF missing for IF in line 40), NEXT j does not match FOR i,
+Two ELSE parts, CASE expected after SELECT CASE, THEN missing after IF, X
+inside a one-line IF. Procedures: SUB B inside SUB A, defined twice, EXIT
+SUB outside SUB, LOCAL outside a SUB or FUNCTION. Names: Undefined label X,
+Undefined line N, Undefined SUB X, Label X defined twice, Cannot assign to
+constant X.
+
+See also: @Errors @{The editor}

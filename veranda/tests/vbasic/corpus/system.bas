@@ -1,0 +1,12 @@
+' Memory and the machine
+POKE $6000, 255
+PRINT PEEK($6000)
+SYS $6000
+PRINT FRE(0); "bytes free"
+OPTION MEMORY 8
+TRON
+FOR i% = 1 TO 3: DOEVENTS: NEXT
+TROFF
+t = TI: SLEEP 30: PRINT TI - t
+STOP
+CONT

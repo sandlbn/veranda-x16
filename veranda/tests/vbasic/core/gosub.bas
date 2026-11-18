@@ -1,0 +1,14 @@
+' GOSUB and RETURN, ON GOTO, ON GOSUB
+10 FOR i% = 1 TO 3: GOSUB 100: NEXT
+20 ON 2 GOSUB 200, 300, 400
+30 FOR k% = 0 TO 4: ON k% GOTO 50, 60, 70
+40 PRINT "none for"; k%: GOTO 80
+50 PRINT "fifty": GOTO 80
+60 PRINT "sixty": GOTO 80
+70 PRINT "seventy"
+80 NEXT k%
+90 END
+100 PRINT "sub"; i%: RETURN
+200 PRINT "two hundred": RETURN
+300 PRINT "three hundred": RETURN
+400 PRINT "four hundred": RETURN

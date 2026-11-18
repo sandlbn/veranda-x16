@@ -1,0 +1,7 @@
+# build results (make): only "VeraBASIC Run.cvt" is kept
+*.o
+vbrun.bin
+vbrun.bin.*
+vbrun.map
+VBRun.cvt
+build-ide/

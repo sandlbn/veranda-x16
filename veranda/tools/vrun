@@ -1,0 +1,57 @@
+#!/bin/bash
+# Run Veranda in x16emu with a folder as HostFS (device 8).
+#
+#   vrun [--test TEXT] [--seconds N] [--dump] <app.cvt | folder>
+#
+# An application: a fresh folder (in $TMPDIR) with the kernel and the file;
+# a folder: the kernel copied into it. The kernel: $VERANDA_KERNEL (a folder
+# with VERANDA.PRG and VERANDA.SYS), else the SDK's bin/, else build/ of the
+# source tree.
+# --test: headless (no window, no sound, -warp), at most N seconds (default
+# 30); passes if the console shows TEXT (the program's LogText).
+# --dump: write dump.bin (VRAM) into the folder when the program stops.
+#
+# TODO(kernel): the application starts by itself once the kernel has an
+# auto-start file (docs/APPFORMAT.md); until then the kernel starts its
+# own first program.
+set -e
+HERE=$(cd "$(dirname "$0")" && pwd)
+EMU=${EMU:-$HOME/Projects/x16-emulator/build/x16emu}
+ROM=${ROM:-$HOME/Projects/x16-rom/build/x16/rom.bin}
+TEST= SECONDS_MAX=30 DUMP=
+while [ $# -gt 1 ]; do
+	case "$1" in
+		--test) TEST=$2; shift 2 ;;
+		--seconds) SECONDS_MAX=$2; shift 2 ;;
+		--dump) DUMP=1; shift ;;
+		*) break ;;
+	esac
+done
+[ $# -eq 1 ] || { sed -n '2,15p' "$0" >&2; exit 2; }
+
+for k in "$VERANDA_KERNEL" "$HERE/../bin" "$HERE/../build"; do
+	if [ -n "$k" ] && [ -f "$k/VERANDA.PRG" ] && [ -f "$k/VERANDA.SYS" ]; then KERNEL=$k; break; fi
+done
+[ -n "$KERNEL" ] || { echo "vrun: no kernel (VERANDA.PRG, VERANDA.SYS): set VERANDA_KERNEL" >&2; exit 1; }
+
+if [ -d "$1" ]; then
+	DIR=$1
+else
+	DIR=$(mktemp -d "${TMPDIR:-/tmp}/vrun.XXXXXX")
+	cp "$1" "$DIR/"
+fi
+cp "$KERNEL/VERANDA.PRG" "$KERNEL/VERANDA.SYS" "$DIR/"
+
+if [ -n "$TEST" ]; then
+	(cd "$DIR" && SDL_VIDEODRIVER=dummy timeout -s INT "$SECONDS_MAX" "$EMU" -rom "$ROM" -prg VERANDA.PRG -run \
+		-warp -sound none -echo ${DUMP:+-dump V} > console.txt 2>&1) || true
+	if grep -q "$TEST" "$DIR/console.txt"; then
+		echo "ok    the program ran: \"$TEST\" ($DIR)"
+	else
+		tail -5 "$DIR/console.txt"
+		echo "FAIL  no \"$TEST\" on the console ($DIR/console.txt)"
+		exit 1
+	fi
+else
+	cd "$DIR" && exec "$EMU" -rom "$ROM" -prg VERANDA.PRG -run -echo ${DUMP:+-dump V}
+fi

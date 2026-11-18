@@ -1,0 +1,8 @@
+# Veranda application header (tools/vpack.py)
+name = Overlays
+class = OvlTest
+version     = 1.0
+author      = You
+description = A Veranda application in assembly.
+mode        = 640x480
+api         = 1

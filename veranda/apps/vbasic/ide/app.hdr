@@ -1,0 +1,14 @@
+# VeraBASIC: the editor and the runtime, one application (DECISIONS V93).
+# It opens .BAS sources (V48); VeraBASIC Run stays for finished programs
+# (program documents, parent class VBRun) and no longer says BAS.
+name        = VeraBASIC
+class       = VBEdit
+version     = 1.0
+author      = Veranda
+description = VeraBASIC: write, check and run BASIC programs for Veranda, with help.
+mode        = 640x480
+api         = 6
+icon        = icon.pbm
+tile        = tile.txt
+overlays    = banked
+documents   = BAS

@@ -1,0 +1,9 @@
+' Colour: paper areas
+PAPER 0, 0, 80, 2, CHROME
+PAPER 0, 2, 20, 58, SIDEBAR
+PAPER 10, 10, 5, 1, RED
+PAPER 10, 11, 5, 1, GREEN
+INK $223
+PALETTE 12, $F80
+IF CARDCOLOR(10, 10) = RED THEN PRINT "red"
+FOR c% = 0 TO 15: PAPER c% * 5, 50, 5, 2, c%: NEXT

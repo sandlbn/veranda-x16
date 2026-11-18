@@ -1,0 +1,8 @@
+10 A$ = "COMMODORE": B$ = ""
+20 FOR I = LEN(A$) TO 1 STEP -1
+30 B$ = B$ + MID$(A$, I, 1)
+40 NEXT
+50 PRINT A$; " "; B$; " "; LEFT$(A$, 4); RIGHT$(A$, 4)
+60 PRINT ASC("A"); CHR$(66); STR$(12); VAL("3.5")
+70 POKE 53280, 0: PRINT PEEK(53281)
+80 PRINT TAB(10); "X"; SPC(2); "Y"

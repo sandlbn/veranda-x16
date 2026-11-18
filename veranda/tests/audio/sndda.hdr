@@ -1,0 +1,10 @@
+# gate sound's desk accessory (tests/audio/sndda.c)
+name        = SndDA
+class       = SndDA
+type        = deskacc
+version     = 1.0
+author      = Veranda
+description = Waits, logs and goes back.
+mode        = keep
+api         = 2
+icon        = icon.pbm

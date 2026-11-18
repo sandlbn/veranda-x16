@@ -1,0 +1,39 @@
+' generated: float expressions through the ROM's maths
+x = 13.24: y = 24.50: z = -30.2: a% = -47
+TRY: PRINT 0; 27.725: CATCH: PRINT 0; "error"; ERR: END TRY
+TRY: PRINT 1; (76.383 - -16.765): CATCH: PRINT 1; "error"; ERR: END TRY
+TRY: PRINT 2; COS(SIN(84.296)): CATCH: PRINT 2; "error"; ERR: END TRY
+TRY: PRINT 3; (y + ((x * 77) / INT(-24.221))): CATCH: PRINT 3; "error"; ERR: END TRY
+TRY: PRINT 4; 68.614: CATCH: PRINT 4; "error"; ERR: END TRY
+TRY: PRINT 5; y: CATCH: PRINT 5; "error"; ERR: END TRY
+TRY: PRINT 6; LOG(ABS(ATN(ATN(a%))) + 1): CATCH: PRINT 6; "error"; ERR: END TRY
+TRY: PRINT 7; ATN(-x): CATCH: PRINT 7; "error"; ERR: END TRY
+TRY: x = 9.601: CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 8; z: CATCH: PRINT 8; "error"; ERR: END TRY
+TRY: PRINT 9; ABS((a% ^ 3)): CATCH: PRINT 9; "error"; ERR: END TRY
+TRY: z = (((y + a%) * INT(19.466)) - EXP((666 + 98.281) / 50)): CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 10; -y: CATCH: PRINT 10; "error"; ERR: END TRY
+TRY: z = LOG(ABS(-1E2) + 1): CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 11; (SQR(ABS((64.308 + 85.170))) ^ 0.5): CATCH: PRINT 11; "error"; ERR: END TRY
+TRY: y = y: CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 12; INT(ATN((259 ^ 3))): CATCH: PRINT 12; "error"; ERR: END TRY
+TRY: x = 4E4: CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 13; ABS(y): CATCH: PRINT 13; "error"; ERR: END TRY
+TRY: PRINT 14; ((SIN(x) * (40.702 - 4E4)) - 16.235): CATCH: PRINT 14; "error"; ERR: END TRY
+TRY: PRINT 15; (SIN((697 * 9E1)) / (x ^ 3)): CATCH: PRINT 15; "error"; ERR: END TRY
+TRY: PRINT 16; (SQR(ABS(LOG(ABS(2E1) + 1))) ^ 0.5): CATCH: PRINT 16; "error"; ERR: END TRY
+TRY: PRINT 17; SQR(ABS(SGN((x - 6E-3)))): CATCH: PRINT 17; "error"; ERR: END TRY
+TRY: PRINT 18; 91.717: CATCH: PRINT 18; "error"; ERR: END TRY
+TRY: PRINT 19; (z / EXP((8E-2 ^ 2) / 50)): CATCH: PRINT 19; "error"; ERR: END TRY
+TRY: y = y: CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 20; 684: CATCH: PRINT 20; "error"; ERR: END TRY
+TRY: PRINT 21; ((SQR(ABS(-4.505)) ^ 2) + -y): CATCH: PRINT 21; "error"; ERR: END TRY
+TRY: PRINT 22; (SQR(ABS((x * -x))) ^ 3): CATCH: PRINT 22; "error"; ERR: END TRY
+TRY: x = SQR(ABS(ATN((-7E-3 ^ 1.5)))): CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 23; COS((INT(8E2) + INT(y))): CATCH: PRINT 23; "error"; ERR: END TRY
+TRY: x = SGN(0.875): CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 24; (-a% + 6E-4): CATCH: PRINT 24; "error"; ERR: END TRY
+TRY: y = -2.463: CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 25; SQR(ABS(67.801)): CATCH: PRINT 25; "error"; ERR: END TRY
+TRY: PRINT 26; a%: CATCH: PRINT 26; "error"; ERR: END TRY
+PRINT x; y; z

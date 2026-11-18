@@ -1,0 +1,12 @@
+' A messy listing: canonical form puts it in order
+x = 1: y = 2
+PRINT x + y; x * y, (x - y)
+IF x <> y THEN PRINT "differ" ELSE PRINT "same"
+FOR i% = 1 TO 3 STEP 1: NEXT
+  a$ = LEFT$("abc", 2)
+  PRINT -x, -y, x - -y
+DIM z(3)
+z(1) = x: CALL Shout("hi")
+GOTO Fin
+Fin:
+SUB Shout(s$): PRINT s$: END SUB

@@ -1,0 +1,9 @@
+# gate da: the test program (tools/vpack.py)
+name        = DADesk
+class       = DADesk
+version     = 1.0
+author      = Veranda
+description = gate da: a test program and test desktop.
+mode        = keep
+api         = 2
+icon        = icon.pbm

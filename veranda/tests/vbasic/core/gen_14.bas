@@ -1,0 +1,36 @@
+' generated: integer expressions (the fast path, overflow into floats)
+a% = -298: b% = -13: c% = 273: d% = -300
+TRY: PRINT 0; ((-4484 > c%) OR ((144 SHR 8) >= (b% OR 23669))): CATCH: PRINT 0; "error"; ERR: END TRY
+TRY: PRINT 1; (((23057 <= 203) SHR 2) AND ((279 \ 271) = -250)): CATCH: PRINT 1; "error"; ERR: END TRY
+TRY: PRINT 2; (234 SHL 16): CATCH: PRINT 2; "error"; ERR: END TRY
+TRY: d% = SGN(((-62 - d%) + -132)): CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 3; (SGN(138) OR d%): CATCH: PRINT 3; "error"; ERR: END TRY
+TRY: PRINT 4; (((c% SHR 14) >= -a%) XOR %1100010): CATCH: PRINT 4; "error"; ERR: END TRY
+TRY: b% = (((140 + 158) MOD SGN(165)) XOR d%): CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 5; (11 <= 163): CATCH: PRINT 5; "error"; ERR: END TRY
+TRY: b% = (((247 + -b%) MOD NOT %1110100) SHR 13): CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 6; 286: CATCH: PRINT 6; "error"; ERR: END TRY
+TRY: b% = (((3651 < 260) SHR 16) SHR 13): CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 7; (SGN(d%) SHL 1): CATCH: PRINT 7; "error"; ERR: END TRY
+TRY: PRINT 8; (NOT (b% XOR 295) SHR 12): CATCH: PRINT 8; "error"; ERR: END TRY
+TRY: c% = (ABS(NOT $767B) OR (269 < SGN(%1001010))): CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 9; 174: CATCH: PRINT 9; "error"; ERR: END TRY
+TRY: PRINT 10; (ABS((18 = 215)) XOR $3FCA): CATCH: PRINT 10; "error"; ERR: END TRY
+TRY: d% = (((294 * d%) = SGN(63)) MOD ((-19 - 18780) SHL 16)): CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 11; 215: CATCH: PRINT 11; "error"; ERR: END TRY
+TRY: PRINT 12; (((87 AND c%) * SGN($349)) OR ($701E XOR NOT $235E)): CATCH: PRINT 12; "error"; ERR: END TRY
+TRY: PRINT 13; ((73 XOR a%) \ $F715): CATCH: PRINT 13; "error"; ERR: END TRY
+TRY: PRINT 14; (a% * -d%): CATCH: PRINT 14; "error"; ERR: END TRY
+TRY: PRINT 15; $1337: CATCH: PRINT 15; "error"; ERR: END TRY
+TRY: PRINT 16; (SGN((c% \ 65)) OR ((c% MOD 248) AND 6)): CATCH: PRINT 16; "error"; ERR: END TRY
+TRY: PRINT 17; (86 \ ((100 OR 18) >= (30370 OR 93))): CATCH: PRINT 17; "error"; ERR: END TRY
+TRY: PRINT 18; ((a% SHR 13) + ABS(%100100)): CATCH: PRINT 18; "error"; ERR: END TRY
+TRY: PRINT 19; $D5B3: CATCH: PRINT 19; "error"; ERR: END TRY
+TRY: PRINT 20; 28533: CATCH: PRINT 20; "error"; ERR: END TRY
+TRY: a% = ((105 > (10 OR 19804)) \ (NOT -%11001101 - SGN(238))): CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 21; (((27 * d%) SHR 10) SHL 12): CATCH: PRINT 21; "error"; ERR: END TRY
+TRY: PRINT 22; $4A2F: CATCH: PRINT 22; "error"; ERR: END TRY
+TRY: PRINT 23; NOT ABS(2): CATCH: PRINT 23; "error"; ERR: END TRY
+TRY: PRINT 24; ((NOT c% SHL 4) >= 40): CATCH: PRINT 24; "error"; ERR: END TRY
+TRY: b% = (283 OR SGN(NOT 268)): CATCH: PRINT "store"; ERR: END TRY
+PRINT a%; b%; c%; d%

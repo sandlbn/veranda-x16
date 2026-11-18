@@ -1,0 +1,10 @@
+# gate audio's desk accessory
+name        = AudDA
+class       = AudDA
+type        = deskacc
+version     = 1.0
+author      = Veranda
+description = Logs the AFLOW bit and goes back.
+mode        = keep
+api         = 2
+icon        = icon.pbm

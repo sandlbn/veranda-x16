@@ -1,0 +1,9 @@
+# gate audio's application (tools/gate_audio.sh)
+name        = AudTest
+class       = AudTest
+version     = 1.0
+author      = Veranda
+description = PCM from the AFLOW interrupt while Veranda draws.
+mode        = 640x480
+api         = 2
+icon        = icon.pbm

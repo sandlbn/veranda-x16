@@ -1,0 +1,9 @@
+# Veranda application header (tools/vpack.py)
+name        = Hello C
+class       = HelloC
+version     = 1.0
+author      = You
+description = A Veranda application in C.
+mode        = 640x480
+api         = 1
+icon        = icon.pbm

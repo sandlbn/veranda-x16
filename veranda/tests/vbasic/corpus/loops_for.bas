@@ -1,0 +1,15 @@
+' FOR loops
+OPTION INTEGER
+FOR i = 1 TO 3
+  FOR j = 1 TO 3
+    PRINT i * j;
+  NEXT j
+  PRINT
+NEXT i
+FOR x = 10 TO 0 STEP -2: PRINT x: NEXT
+FOR a = 1 TO 2: FOR b = 1 TO 2: PRINT a, b: NEXT b, a
+FOR k = 0 TO 99
+  IF k = 7 THEN EXIT FOR
+NEXT
+FOR f = 0.5 TO 2 STEP 0.25
+NEXT f

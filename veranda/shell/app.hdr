@@ -1,0 +1,10 @@
+# Veranda shell (tools/vpack.py)
+name        = SHELL
+class       = Shell
+version     = 1.0
+author      = Veranda
+description = The desktop: folders, files and applications.
+mode        = keep
+api         = 6
+icon        = icon.pbm
+overlays    = banked

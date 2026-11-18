@@ -1,0 +1,41 @@
+' generated: integer expressions (the fast path, overflow into floats)
+a% = 189: b% = -282: c% = 294: d% = 282
+TRY: PRINT 0; (((191 > 49) < SGN(259)) <> 249): CATCH: PRINT 0; "error"; ERR: END TRY
+TRY: PRINT 1; -%11110111: CATCH: PRINT 1; "error"; ERR: END TRY
+TRY: PRINT 2; (-$1C94 OR ((10395 * 142) - (d% - -1))): CATCH: PRINT 2; "error"; ERR: END TRY
+TRY: PRINT 3; (153 MOD NOT ($2ED0 MOD 15477)): CATCH: PRINT 3; "error"; ERR: END TRY
+TRY: d% = SGN(((%10110001 AND c%) SHR 1)): CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 4; ((NOT 31802 >= NOT 46) OR (8860 > (b% SHL 0))): CATCH: PRINT 4; "error"; ERR: END TRY
+TRY: a% = (253 MOD NOT NOT 118): CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 5; (NOT -89 XOR (a% + (d% MOD -145))): CATCH: PRINT 5; "error"; ERR: END TRY
+TRY: a% = SGN((ABS(b%) * (-85 - 27))): CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 6; (b% - ABS(SGN(8833))): CATCH: PRINT 6; "error"; ERR: END TRY
+TRY: PRINT 7; -%1100000: CATCH: PRINT 7; "error"; ERR: END TRY
+TRY: PRINT 8; -207: CATCH: PRINT 8; "error"; ERR: END TRY
+TRY: PRINT 9; ((-a% SHL 14) OR ((-32 - 7142) < SGN(-d%))): CATCH: PRINT 9; "error"; ERR: END TRY
+TRY: PRINT 10; ((155 MOD (11 XOR b%)) + ((b% \ 292) MOD 51)): CATCH: PRINT 10; "error"; ERR: END TRY
+TRY: a% = (((-158 >= c%) AND 244) \ ((31 * 223) SHL 0)): CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 11; (((87 SHL 1) OR (166 = 32493)) MOD 229): CATCH: PRINT 11; "error"; ERR: END TRY
+TRY: c% = 134: CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 12; ((ABS($5373) MOD ($1E55 OR b%)) + SGN((220 AND 153))): CATCH: PRINT 12; "error"; ERR: END TRY
+TRY: a% = 35: CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 13; SGN((228 AND 295)): CATCH: PRINT 13; "error"; ERR: END TRY
+TRY: PRINT 14; (SGN((217 XOR -258)) <= (190 \ -802)): CATCH: PRINT 14; "error"; ERR: END TRY
+TRY: PRINT 15; a%: CATCH: PRINT 15; "error"; ERR: END TRY
+TRY: c% = 207: CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 16; (((-40 SHR 15) <= ($4A29 SHL 8)) AND SGN((a% <= 174))): CATCH: PRINT 16; "error"; ERR: END TRY
+TRY: PRINT 17; (ABS((a% - 62)) XOR (24186 * (c% - 200))): CATCH: PRINT 17; "error"; ERR: END TRY
+TRY: b% = 27: CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 18; ABS(((b% <= $83C9) SHL 15)): CATCH: PRINT 18; "error"; ERR: END TRY
+TRY: a% = 175: CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 19; 159: CATCH: PRINT 19; "error"; ERR: END TRY
+TRY: PRINT 20; a%: CATCH: PRINT 20; "error"; ERR: END TRY
+TRY: PRINT 21; 227: CATCH: PRINT 21; "error"; ERR: END TRY
+TRY: PRINT 22; ((ABS(%10001001) <> (82 OR a%)) = (221 XOR (b% <> b%))): CATCH: PRINT 22; "error"; ERR: END TRY
+TRY: b% = (((115 OR b%) <> 0) MOD ((166 OR 20677) MOD (25493 SHR 6))): CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 23; ((42 SHR 14) SHL 15): CATCH: PRINT 23; "error"; ERR: END TRY
+TRY: d% = 276: CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 24; (((21770 OR 9684) * (%1110001 - 151)) OR 150): CATCH: PRINT 24; "error"; ERR: END TRY
+TRY: PRINT 25; (((-4281 SHL 15) MOD NOT 4189) SHL 11): CATCH: PRINT 25; "error"; ERR: END TRY
+TRY: PRINT 26; ABS((NOT b% SHR 5)): CATCH: PRINT 26; "error"; ERR: END TRY
+PRINT a%; b%; c%; d%

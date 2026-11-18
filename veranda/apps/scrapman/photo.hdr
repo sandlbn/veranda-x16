@@ -1,0 +1,10 @@
+# Veranda desk accessory header (tools/vpack.py)
+name        = Photo Manager
+class       = PhotoManager
+type        = deskacc
+version     = 1.0
+author      = Veranda
+description = An album of pictures: add the clipboard's, look at them, copy one back.
+mode        = keep
+api         = 1
+icon        = photo.pbm

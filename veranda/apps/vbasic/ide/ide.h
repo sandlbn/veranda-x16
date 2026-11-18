@@ -1,0 +1,160 @@
+/* VeraBASIC, the editor (DECISIONS V93): its declarations.
+
+   The editor is C with the SDK's textkit (Veranda Edit's gap buffer, view,
+   editing, undo, find, clipboard and files), linked by a link of its own
+   (ide/ide.cfg) after VeraBASIC's main one, whose symbols below $A000 it
+   takes as equates (tools/vbceq.py, as Run's C overlays do):
+     LOW    its main RAM part, at the interpreter's code's place
+            (vb.s _ide_s0 .. _ide_s1; ideshare.h): buf.s, text.c, ops.c,
+            undo.c (the text's code: every bank calls it), the dialog boxes'
+            and menus' tables, the state the banks share (low.c), the calls
+            between banks and the kernel's entries (low.s)
+     B_VIEW the bank the kernel calls (appBank while the editor shows): the
+            window (textkit's view.c), keys, the pointer, the colouring
+     B_FILE files (textkit's file.c), the clipboard (scrap.c), the menus'
+            layout, the text given to the runtime's side
+     B_DLG  the SDK's Open and Save dialog (vrchoose.c: a bank alone)
+     B_HELP the help viewer, F1, the status bar's syntax lines
+     B_FMT  find and replace (textkit's find.c), Format, the answers of a
+            Check or a run (the error jumps)
+   A bank calls LOW and its own code; another bank's only through xcall
+   (a void function; arguments in LOW's variables), which maps it and makes
+   it appBank meanwhile (its dialog boxes' routines).
+
+   MIT licence (LICENSE). */
+#ifndef IDE_H
+#define IDE_H
+
+#include <veranda.h>
+#include <vr.h>
+#include "ideshare.h"
+
+/* textkit's configuration (textkit.h) */
+#define docname ide_doc         /* (main.c has a docname: the run's title) */
+#define COLS    tk_cols
+#define X0      tk_x0
+#define TK_GUTTER
+#define TK_PUT_SEG "CODE"              /* (tk_put_s, tk_put_ul in LOW: every bank uses them) */
+#define TK_ROW_HOOK ide_rowx
+#define TK_SCROLL_HOOK(d) memset(dirty, 1, ROWS)    /* (the colours do not scroll) */
+#define TK_FONT vb_font
+#define TK_IOBUF 512
+#define TK_UNDO_BANKS 2
+#define TK_TYPES "VeraBASIC:BAS"
+#define TK_UNTITLED "Untitled.bas"
+#define TK_TMPNAME "~VBASIC.TMP"
+#define TK_OPEN_TITLE "Open a VeraBASIC program"
+#define TK_SAVE_TITLE "Save the program as"
+extern unsigned char tk_x0, tk_cols;
+/* main RAM's room for a program's names (from the main link's BSS end,
+   IDEDYN, to the C stack: 2,555 bytes; 1,859 in the test build, which has
+   the player there) is free while the editor shows: its scratch, where
+   nothing lasts across a run (ide_resume clears what must start empty).
+   IDEDYN is the linker's (tools/vbceq.py --ide). */
+extern unsigned char IDEDYN[];
+#define iobuf      (IDEDYN + 0)         /* 512: files, undo, the scrap, the text given to Run */
+#define IDE_REC    (IDEDYN + 512)       /* 256: Format's line record */
+#define IDE_OUT    ((char *)IDEDYN + 768)   /* 256: its text */
+#define IDE_OUTN   256
+/* (512 .. 1199: the Open and Save dialog's variables, ide.cfg B3BSS) */
+#define lexbuf     (IDEDYN + 1200)      /* 256: a line's bytes (the colouring, the syntax, Return) */
+#define ide_msga   ((char *)IDEDYN + 1200)  /* 48, 64: a dialog box's two lines (over lexbuf: */
+#define ide_msgb   ((char *)IDEDYN + 1248)  /* no line is read while a box is up) */
+#define lexcls     (IDEDYN + 1456)      /* 80: the cards' classes (B_LEX; the help viewer's styles) */
+#define ide_paper  (IDEDYN + 1536)      /* 80: a row's colours (ColorRect COLOR_BUF) */
+#define status_msg ((char *)IDEDYN + 1616)  /* 64: a message in the status bar (until the next key) */
+#define syn_line   ((char *)IDEDYN + 1680)  /* 64: the status bar's syntax line (B_SYN) */
+#define IDE_DYNEND 1744
+extern unsigned char vb_font[2048];
+void __fastcall__ ide_rowx(unsigned char r);   /* (LOW: B_LEX's ide_row) */
+extern unsigned char lex_row;
+
+#include <textkit.h>
+
+/* the banks (ide_banks[]) */
+#define B_VIEW 0
+#define B_FILE 1
+#define B_DLG  2
+#define B_HELP 3
+#define B_FMT  4
+#define B_SYN  5
+#define B_CMD  6
+#define B_LEX  7
+void __fastcall__ xcall(unsigned char bank, void (*f)(void));
+#define XCALL(b, f) xcall(ide_banks[b], f)
+
+/* main RAM's (main.c, vb.s, vbtok.s) */
+extern char vb_docname[70];             /* main.c's docname: the run's title */
+extern unsigned char vt_inmem, vt_src, vt_err, vt_recb[4];
+extern unsigned int vt_srclen, vt_after, vt_erl, vt_size[4];
+extern char vt_msg[80];
+extern unsigned char vb_errno, vb_state;
+extern unsigned int vb_esrc;
+
+/* LOW (low.c, low.s) */
+extern unsigned char need_fix, ide_first;
+extern unsigned long err_line;          /* a line shown RED (Check, an error), from 1; 0 none */
+extern unsigned long stop_line;         /* the line a program stopped at, SELECT; 0 none */
+extern unsigned char colour_on;         /* the colouring (not in the Classic theme) */
+extern unsigned char gutter_on;
+extern unsigned char help_open;         /* the help viewer is up (B_HELP's keys) */
+extern char help_req[40];               /* the page asked for */
+extern unsigned char help_file;         /* its file (HF_*) */
+extern unsigned char ide_test;
+extern unsigned long check_after;       /* F8: the next error after this line */
+void menus_off(void);
+void message(const char *a, const char *b);
+unsigned char yesno(const char *a, const char *b);
+unsigned char yesnocancel(const char *a, const char *b);
+unsigned char ask(const char *prompt, char *buf, unsigned char max);
+void sys_dir(void);
+extern unsigned char fr_bank;           /* ide_fread: the bank, the address, the bytes at most */
+extern void *fr_at;
+extern unsigned int fr_n;
+unsigned int __fastcall__ ide_fread(unsigned char h);
+extern unsigned char bg_bank, bg_n;     /* ide_bget: bg_n bytes from bg_at in bg_bank to bg_to */
+extern void *bg_at, *bg_to;
+void ide_bget(void);
+void help_free(void);
+void ide_redraw_menu(void);
+extern void *const ide_menubar;
+extern unsigned int barx[6];
+void ide_log(const char *s);            /* (the test build: a line to the emulator's console) */
+void ide_logn(const char *s, unsigned long n);
+
+/* B_VIEW (keys.c, textkit's view.c) */
+void ide_tick(void), ide_key(void), ide_press(void), view_off(void);
+/* B_LEX (colour.c) */
+void ide_row(void);
+/* B_CMD (cmd2.c, textkit's find.c): the actions (LOW's mn_* stubs call
+   do_*), the start, the answers */
+void ide_resume(void), do_newline(void), fmt_answer(void);
+void ide_relayout(void);                /* the gutter on or off: COLS, X0 */
+extern unsigned char ide_lastreq;
+void mn_about(void), mn_new(void), mn_open(void), mn_save(void), mn_saveas(void), mn_quit(void);
+void mn_undo(void), mn_cut(void), mn_copy(void), mn_paste(void), mn_selall(void), mn_format(void), mn_gutter(void);
+void mn_find(void), mn_findnext(void), mn_replnext(void), mn_goto(void), mn_nexterr(void);
+void mn_run(void), mn_check(void), mn_stop(void), mn_output(void), mn_newline(void);
+void mn_help(void), mn_contents(void), mn_index(void), mn_tutorial(void), mn_errors(void);
+
+/* B_FILE (cmd.c) */
+void cmd_layout(void), cmd_new(void), cmd_open(void), cmd_save(void), cmd_saveas(void);
+void cmd_quit(void), cmd_startdoc(void), cmd_export(void), cmd_cut(void), cmd_copy(void), cmd_paste(void);
+extern unsigned char export_ok;
+
+/* B_HELP (help.c), B_SYN (syn.c) */
+void help_show(void), help_key(void);
+void help_word(void), help_syntax(void);
+#define HF_KEYWORDS 0
+#define HF_TUTORIAL 1
+#define HF_ERRORS   2
+#define HF_EDITOR   3
+#define HF_N        4
+
+/* B_FMT (fmt.c) */
+void fmt_format(void);
+
+/* the requests (keys.c): the text to the runtime's side */
+void __fastcall__ ide_request(unsigned char r);
+
+#endif

@@ -1,0 +1,29 @@
+' generated: integer expressions (the fast path, overflow into floats)
+a% = -25: b% = -271: c% = -180: d% = 128
+TRY: PRINT 0; 239: CATCH: PRINT 0; "error"; ERR: END TRY
+TRY: PRINT 1; 255: CATCH: PRINT 1; "error"; ERR: END TRY
+TRY: PRINT 2; 272: CATCH: PRINT 2; "error"; ERR: END TRY
+TRY: PRINT 3; 243: CATCH: PRINT 3; "error"; ERR: END TRY
+TRY: PRINT 4; c%: CATCH: PRINT 4; "error"; ERR: END TRY
+TRY: PRINT 5; (%10111010 \ ((%1100111 XOR -%111001) + 296)): CATCH: PRINT 5; "error"; ERR: END TRY
+TRY: PRINT 6; (((158 SHR 7) - NOT -29941) - (291 OR (b% MOD %11111))): CATCH: PRINT 6; "error"; ERR: END TRY
+TRY: PRINT 7; (ABS((236 XOR 8250)) = ((b% + 156) AND (152 * a%))): CATCH: PRINT 7; "error"; ERR: END TRY
+TRY: c% = (ABS(ABS(-$2AEA)) <> ((26 = $2D62) * (176 \ 25))): CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 8; SGN(((%1000010 AND 210) <> NOT %1101100)): CATCH: PRINT 8; "error"; ERR: END TRY
+TRY: PRINT 9; (%1100001 \ ((-270 + 246) = 134)): CATCH: PRINT 9; "error"; ERR: END TRY
+TRY: PRINT 10; ((ABS(c%) SHR 1) OR ((d% * 28187) + (259 SHR 13))): CATCH: PRINT 10; "error"; ERR: END TRY
+TRY: b% = 20103: CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 11; (NOT (-57 OR a%) OR 202): CATCH: PRINT 11; "error"; ERR: END TRY
+TRY: PRINT 12; (d% XOR $D00): CATCH: PRINT 12; "error"; ERR: END TRY
+TRY: c% = 97: CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 13; (((c% XOR 44) <= $E24A) AND %110101): CATCH: PRINT 13; "error"; ERR: END TRY
+TRY: PRINT 14; ($F953 SHR 16): CATCH: PRINT 14; "error"; ERR: END TRY
+TRY: PRINT 15; (((3765 OR 352) < (236 OR $541E)) - ABS((a% AND 279))): CATCH: PRINT 15; "error"; ERR: END TRY
+TRY: c% = a%: CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 16; 22317: CATCH: PRINT 16; "error"; ERR: END TRY
+TRY: a% = -45: CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 17; (ABS(NOT -b%) OR SGN((-$47E3 SHL 11))): CATCH: PRINT 17; "error"; ERR: END TRY
+TRY: PRINT 18; ((288 < b%) * ((b% * 3294) SHL 2)): CATCH: PRINT 18; "error"; ERR: END TRY
+TRY: PRINT 19; (1689 SHR 5): CATCH: PRINT 19; "error"; ERR: END TRY
+TRY: PRINT 20; 154: CATCH: PRINT 20; "error"; ERR: END TRY
+PRINT a%; b%; c%; d%

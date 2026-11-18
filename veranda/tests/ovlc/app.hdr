@@ -1,0 +1,9 @@
+# Veranda application header (tools/vpack.py)
+name = OvlC
+class = OvlCTest
+version     = 1.0
+author      = You
+description = Banked overlays in C.
+mode        = 640x480
+api         = 2
+overlays    = banked

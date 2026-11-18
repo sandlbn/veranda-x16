@@ -1,0 +1,25 @@
+' generated: integer expressions (the fast path, overflow into floats)
+a% = -133: b% = 116: c% = -154: d% = 43
+TRY: PRINT 0; (((91 > a%) OR (232 SHR 7)) \ $8D98): CATCH: PRINT 0; "error"; ERR: END TRY
+TRY: PRINT 1; NOT ((65 + 85) < 178): CATCH: PRINT 1; "error"; ERR: END TRY
+TRY: b% = SGN(((-$F77E AND 278) SHL 11)): CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 2; ((ABS(10043) \ (-211 - a%)) AND (NOT -d% >= c%)): CATCH: PRINT 2; "error"; ERR: END TRY
+TRY: PRINT 3; (($1AAE + (d% * $8885)) * (NOT %10110011 SHL 3)): CATCH: PRINT 3; "error"; ERR: END TRY
+TRY: PRINT 4; (229 SHL 6): CATCH: PRINT 4; "error"; ERR: END TRY
+TRY: PRINT 5; ABS((-a% OR $EF5A)): CATCH: PRINT 5; "error"; ERR: END TRY
+TRY: PRINT 6; NOT SGN((255 \ -289)): CATCH: PRINT 6; "error"; ERR: END TRY
+TRY: PRINT 7; (((174 - -89) <= (-216 + 77)) > (SGN(-175) AND (247 SHL 12))): CATCH: PRINT 7; "error"; ERR: END TRY
+TRY: PRINT 8; SGN(ABS(SGN(190))): CATCH: PRINT 8; "error"; ERR: END TRY
+TRY: PRINT 9; (-c% SHR 4): CATCH: PRINT 9; "error"; ERR: END TRY
+TRY: PRINT 10; (((270 OR 212) AND NOT 191) OR $46DD): CATCH: PRINT 10; "error"; ERR: END TRY
+TRY: PRINT 11; -b%: CATCH: PRINT 11; "error"; ERR: END TRY
+TRY: PRINT 12; d%: CATCH: PRINT 12; "error"; ERR: END TRY
+TRY: PRINT 13; -14397: CATCH: PRINT 13; "error"; ERR: END TRY
+TRY: PRINT 14; (SGN((-16 MOD 115)) <= ABS(($EC8B \ %1100100))): CATCH: PRINT 14; "error"; ERR: END TRY
+TRY: d% = 136: CATCH: PRINT "store"; ERR: END TRY
+TRY: PRINT 15; 254: CATCH: PRINT 15; "error"; ERR: END TRY
+TRY: PRINT 16; ABS(((72 SHR 13) OR SGN(205))): CATCH: PRINT 16; "error"; ERR: END TRY
+TRY: PRINT 17; NOT -%11011111: CATCH: PRINT 17; "error"; ERR: END TRY
+TRY: PRINT 18; 56: CATCH: PRINT 18; "error"; ERR: END TRY
+TRY: d% = -204: CATCH: PRINT "store"; ERR: END TRY
+PRINT a%; b%; c%; d%

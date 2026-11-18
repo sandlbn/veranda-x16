@@ -1,0 +1,9 @@
+' the ROM's functions
+PRINT SQR(2); SQR(16); SQR(0)
+PRINT SIN(0); SIN(1); COS(0); COS(1); TAN(0.5)
+PRINT ATN(1); 4 * ATN(1)
+PRINT EXP(0); EXP(1); EXP(-1)
+PRINT LOG(1); LOG(10); LOG(10) / LOG(2)
+PRINT 2 ^ 0.5; 10 ^ -2; 1.5 ^ 2.5
+PRINT INT(SIN(1) * 1000); INT(-SIN(1) * 1000)
+FOR a = 0 TO 3 STEP 0.5: PRINT a; SIN(a): NEXT
