@@ -10,7 +10,8 @@
 #                   gate_vb_ui.sh (the Veranda extensions, part 1), gate_vb_files.sh (part 2:
 #                   files, dialogs, the clipboard, icons, tiles, sprites), gate_vb_sdk.sh
 #                   (vr_tile in the SDK; gates sdk, shell, edit), gate_vb_ide.sh (VeraBASIC, the
-#                   editor: apps/vbasic make ide; textkit, gate edit)
+#                   editor: apps/vbasic make ide; textkit, gate edit), gate_vb_quit.sh (every
+#                   example started from the shell and quit every way: the shell comes back)
 all:
 	python3 -I -B tools/kbuild.py
 

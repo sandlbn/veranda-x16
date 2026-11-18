@@ -23,6 +23,9 @@ NAME.ms, a command a line ('#' a comment):
     bar NAME ...      the menu bar's texts (the first: the program's name)
     pick M I          a click on bar item M, then on its menu's item I
     open M            a click on bar item M (its menu stays open)
+    home              the pointer's place not known: the next move goes
+                      to 0, 0 first (after a program, a dialog box or a
+                      menu moved it)
     exit              the emulator stops (its dumps)
 The pointer starts at 0, 0 (a move of -2000, -2000); the program's
 _vx_idle and _vx_evn (vbx.s) are read from the map. MIT licence (LICENSE).
@@ -135,6 +138,8 @@ def main(argv):
                 at('down 1')
                 at('up 1', 6)
                 f[0] += 20
+        elif c == 'home':
+            pos[:] = [-1000, 0]
         elif c == 'exit':
             at('exit', 30)
         else:
