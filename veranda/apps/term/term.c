@@ -7,7 +7,7 @@
    capture, XMODEM, the scrollback position). Pages (settings, the address
    book) are drawn in the window and give it back.
 
-   Data comes in through the interrupt (ser.s) into an 8 KB ring; the main
+   Data comes in through the interrupt (the SDK's vrser.s, V98) into an 8 KB ring; the main
    loop (appMain) takes it, passes it through Telnet and XMODEM to the
    screen, and draws. Keys go to the host (keyVector), PgUp and PgDn move
    through the scrollback, F7 is the session menu.
@@ -1018,7 +1018,7 @@ static void tick(void)
 {
     unsigned int n;
     unsigned char i;
-    ser_wake();                         /* (after the switcher: V91) */
+    term_wake();                        /* (after the switcher: V91) */
     for (i = 0; i < 8; ++i) {
         n = ser_get(rxbuf, sizeof rxbuf);
         if (!n)
@@ -1075,7 +1075,7 @@ int main(void)
     ser_rxbank = b;
     vt_init(b + 1, b + 3, hbanks);
     intFirstVector = VR_FN(SerIrq);
-    asideVector = VR_FN(ser_aside);     /* (V91) */
+    asideVector = VR_FN(term_aside);    /* (V91) */
 #ifdef TERM_TEST
     test_start();
 #endif
