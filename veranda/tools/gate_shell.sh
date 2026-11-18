@@ -47,7 +47,7 @@
 #    host folder and an SD card image; PNGs build/gate/shell/theme-*.png
 set -e
 cd "$(dirname "$0")/.."
-OUT=build/gate/shell
+OUT=${OUT:-build/gate/shell}
 PY="python3 -I -B"
 EMU=${EMU:-$HOME/Projects/x16-emulator/build/x16emu}
 ROM=${ROM:-$HOME/Projects/x16-rom/build/x16/rom.bin}

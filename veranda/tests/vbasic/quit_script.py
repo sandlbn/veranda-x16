@@ -81,7 +81,7 @@ def script(prog, path, way):
         sys.exit('quit_script: no way %s' % way)
     m.append('pause 300')
     if path == 'ide':               # the editor's File > Quit
-        m += ['home', bar_line(IDE_BAR), 'pick 1 4']
+        m += ['home', bar_line(IDE_BAR), 'pick 1 6']    # (Quit: the seventh item since V99)
     m.append('pause 900')
     return '\n'.join(m) + '\n'
 

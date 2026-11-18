@@ -158,6 +158,8 @@ static void idle(void)
 /* the Open and Save dialog (vrchoose.h) in B_DLG; its variables in main
    RAM's scratch (ide.cfg DYN), cleared first as crt0 clears a BSS */
 static const char types[] = TK_TYPES;
+const char *file_types;                 /* (B_MK's filter, for one box) */
+unsigned char ide_make;
 extern unsigned char _B3BSS_RUN__[], _B3BSS_SIZE__[];
 
 unsigned char __fastcall__ file_dlg(unsigned char mode, const char *title, char *name)
@@ -165,7 +167,8 @@ unsigned char __fastcall__ file_dlg(unsigned char mode, const char *title, char 
     unsigned char r, b = *(volatile unsigned char *)0;
     memset(_B3BSS_RUN__, 0, (unsigned int)_B3BSS_SIZE__);
     vr_file_hook = idle;                /* (the test's player: the box waits) */
-    vr_file_types = types;
+    vr_file_types = file_types ? file_types : types;
+    file_types = 0;
     MAPBANK(ide_banks[B_DLG]);
     r = vr_file(mode, title, name);
     MAPBANK(b);
@@ -186,9 +189,10 @@ struct menu12 { unsigned char top, bottom; unsigned int left, right; unsigned ch
 #define IH 14
 struct menu1 mi_vb = { 14, 14 + 1 * IH, 0, 0, VERTICAL | 1, {
     { "About VeraBASIC", MENU_ACTION, mn_about } } };
-struct menu5 mi_file = { 14, 14 + 5 * IH, 0, 0, VERTICAL | 5, {
+struct menu7 mi_file = { 14, 14 + 7 * IH, 0, 0, VERTICAL | 7, {
     { 0, MENU_ACTION, mn_new }, { 0, MENU_ACTION, mn_open }, { 0, MENU_ACTION, mn_save },
-    { 0, MENU_ACTION, mn_saveas }, { 0, MENU_ACTION, mn_quit } } };
+    { 0, MENU_ACTION, mn_saveas }, { 0, MENU_ACTION, mn_saveprog }, { 0, MENU_ACTION, mn_makeapp },
+    { 0, MENU_ACTION, mn_quit } } };
 struct menu7 mi_edit = { 14, 14 + 7 * IH, 0, 0, VERTICAL | 7, {
     { 0, MENU_ACTION, mn_undo }, { 0, MENU_ACTION, mn_cut }, { 0, MENU_ACTION, mn_copy },
     { 0, MENU_ACTION, mn_paste }, { 0, MENU_ACTION, mn_selall }, { 0, MENU_ACTION, mn_format },
@@ -209,7 +213,7 @@ struct menu6 mi_bar = { 0, 14, 0, 0, HORIZONTAL | UN_CONSTRAINED | 6, {
     { "Search", SUB_MENU, &mi_search }, { "Run", SUB_MENU, &mi_run }, { "Help", SUB_MENU, &mi_help } } };
 void *const ide_menubar = &mi_bar;
 unsigned int barx[6];                   /* the bar's items (the test's script) */
-char mi_text[900];                      /* the items' texts, one after the other (cmd_layout) */
+char mi_text[800];                      /* the items' texts, one after the other (cmd_layout: 771 bytes, V99) */
 
 void ide_redraw_menu(void)
 {

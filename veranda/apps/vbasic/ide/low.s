@@ -27,7 +27,7 @@
 .import popa, pusha
 .import _ide_banks, _ide_req, _ide_ovl1, _ide_govec
 .import _ide_tick, _ide_key, _ide_press, _ide_resume, _vx_ovl7
-.import _do_about, _do_new, _do_open, _do_save, _do_saveas, _do_quit
+.import _do_about, _do_new, _do_open, _do_save, _do_saveas, _do_quit, _do_saveprog, _do_makeapp
 .import _do_undo, _do_cut, _do_copy, _do_paste, _do_selall, _do_format, _do_gutter
 .import _do_find, _do_findnext, _do_replnext, _do_goto, _do_nexterr
 .import _do_run, _do_check, _do_stop, _do_output, _do_newline
@@ -215,6 +215,8 @@ _ide_bput:
 	MN "open"
 	MN "save"
 	MN "saveas"
+	MN "saveprog"
+	MN "makeapp"
 	MN "quit"
 	MN "undo"
 	MN "cut"

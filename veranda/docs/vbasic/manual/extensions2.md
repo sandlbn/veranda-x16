@@ -1,4 +1,4 @@
-# VeraBASIC: the Veranda extensions, part 2
+# 3b. Veranda extensions, part 2
 
 This chapter covers the rest of what makes a VeraBASIC program a Veranda
 program: files with long names and folders, dialog boxes (the system's

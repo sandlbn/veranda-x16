@@ -1,4 +1,4 @@
-# Debugging
+# 6. Debugging
 
 VeraBASIC's debugger is part of the editor: a program run from it can be
 stopped at a line, looked at, changed, and sent on, and its screen comes

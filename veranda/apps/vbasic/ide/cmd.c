@@ -58,11 +58,11 @@ void cmd_export(void)
 struct item { const char *text; unsigned char type; void *p; };
 struct menuh { unsigned char top, bottom; unsigned int left, right; unsigned char flags; struct item i[1]; };
 extern struct menuh mi_vb, mi_file, mi_edit, mi_search, mi_run, mi_help, mi_bar;
-extern char mi_text[900];
+extern char mi_text[800];
 
-static const char *const names[34][2] = {
+static const char *const names[36][2] = {
     { "New", "Ctrl+N" }, { "Open...", "Ctrl+O" }, { "Save", "Ctrl+S" }, { "Save as...", "Ctrl+Shift+S" },
-    { "Quit", "Ctrl+Q" },
+    { "Save program...", "" }, { "Make application...", "" }, { "Quit", "Ctrl+Q" },
     { "Undo", "Ctrl+Z" }, { "Cut", "Ctrl+X" }, { "Copy", "Ctrl+C" }, { "Paste", "Ctrl+V" },
     { "Select all", "Ctrl+A" }, { "Format", "Ctrl+Shift+F" }, { "Line numbers", "" },
     { "Find and replace...", "Ctrl+F" }, { "Find next", "F3" }, { "Replace, find next", "Ctrl+H" },
@@ -74,7 +74,7 @@ static const char *const names[34][2] = {
     { "Error messages", "" },
 };
 static struct menuh *const menus[5] = { &mi_file, &mi_edit, &mi_search, &mi_run, &mi_help };
-static const unsigned char first[6] = { 0, 5, 12, 17, 29, 34 };
+static const unsigned char first[6] = { 0, 7, 14, 19, 31, 36 };
 
 static unsigned int mi_at;
 

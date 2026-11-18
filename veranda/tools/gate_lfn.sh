@@ -21,7 +21,7 @@
 #    (build/gate/lfn/shell-r49.png)
 set -e
 cd "$(dirname "$0")/.."
-OUT=build/gate/lfn
+OUT=${OUT:-build/gate/lfn}
 PY="python3 -I -B"
 EMU=${EMU:-$HOME/Projects/x16-emulator/build/x16emu}
 ROM=${ROM:-$HOME/Projects/x16-rom/build/x16/rom.bin}

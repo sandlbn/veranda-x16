@@ -138,12 +138,23 @@ Two habits make most of the difference:
 - **Procedures.** `SUB` and `FUNCTION` with `LOCAL` variables keep a
   program readable at no great cost; `GOSUB` is there for V2 listings.
 
+## Making it an application
+
+When a program is finished, the editor's **File > Make application...**
+turns it into an application of its own, with its name and its tile in
+`/VERANDA/APPS`: a double click starts it, and nobody needs VeraBASIC to
+run it. Its `{APP}` lines give it a name, a tile and the documents it
+opens; chapter 7, [Making applications](making-apps.md), has it all.
+*File > Save program...* writes a program document instead, which
+VeraBASIC Run opens. On the PC, `vbasic.py app` and `vbasic.py build` do
+the same.
+
 ## The parts and where they come from
 
 | Part | What it is |
 |---|---|
 | `VeraBASIC Run.cvt` | the runtime: an interpreter in 6502 assembly, about 24 KB with its console window, and the tokenizer in 20 KB of overlays |
-| `vbasic.py` | check, build, list, run (the reference interpreter): [the tools](../TOOLS.md) |
+| `vbasic.py` | check, build, app, list, import, run (the reference interpreter), doc: [the tools](../TOOLS.md) |
 | `docs/vbasic/FORMAT.md` | the token format and the program document |
 | [The language](language.md) | the next chapter |
 | [The reference](reference.md) | every keyword |

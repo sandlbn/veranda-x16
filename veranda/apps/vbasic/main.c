@@ -124,6 +124,24 @@ unsigned char vb_font[2048];      /* (CARDS draws with it too) */
 static char title[80];
 char docname[70];                  /* (the menu bar's name: vbui.s) */
 static unsigned char raw, nraw;         /* a run of banks to read records into */
+/* a made application (DECISIONS V99): VeraBASIC Run's records with the
+   program's after them (record 12 on: docs/vbasic/FORMAT.md 7.3); appbank
+   record 12's bank (0: VeraBASIC Run itself), vb_appdoc 1 when it was
+   opened with a document (DOCUMENT$, vbfile.s) */
+unsigned char vb_appdoc;
+#if !defined(VB_IDE) && !defined(VB_TEST)
+#define VB_APP 1                        /* (not in the editor nor the test build: overlay 1's room) */
+#endif
+#ifdef VB_APP
+#pragma bss-name (push, "OVL1BSS")      /* (overlay 1's alone: main RAM is the program's) */
+static unsigned char appbank;
+static unsigned char apphdr[16];
+static unsigned char cb;                /* the blob's place: its bank, its offset there */
+static unsigned int co;
+#pragma bss-name (pop)
+#else
+#define appbank 0
+#endif
 static unsigned char ended;
 
 /* ---- the console's drawing ---- */
@@ -269,7 +287,10 @@ static void message(const char *a, const char *b)
 static void m_about(void)
 {
     GotoFirstMenu();
-    message("VeraBASIC Run 1.0", "Runs VeraBASIC programs (MIT licence).");
+    if (appbank)
+        message(docname, "Made with VeraBASIC.");
+    else
+        message("VeraBASIC Run 1.0", "Runs VeraBASIC programs (MIT licence).");
 }
 
 static void start(const char *name);
@@ -369,6 +390,7 @@ static unsigned int rec_read(unsigned char n)
 }
 
 static const char *load_error;
+static const char newer[] = "Made by a newer VeraBASIC.";
 
 static void free_program(void)
 {
@@ -411,7 +433,7 @@ made:
     if (s1 == 0xFFFF || s1 < 24 || rb(0) != 'V' || rb(1) != 'B')
         goto bad;
     if (rb(2) > 1 || rb(3) > 1) {
-        load_error = "Made by a newer VeraBASIC.";
+        load_error = newer;
         goto bad;
     }
     nsym = rw(4);
@@ -590,6 +612,60 @@ static unsigned char compile(const char *name)
     return 0;
 }
 
+#ifdef VB_APP
+/* a made application's program (DECISIONS V99): its records, one after
+   the other from byte 80 of record 12 on (8191 bytes a record, in banks
+   appbank, appbank + 1 ...), copied into runs of banks as the tokenizer
+   leaves them (recb, vt_size: srcmode) */
+static unsigned char app_rec(unsigned char n, unsigned int size)
+{
+    unsigned int at, k, o;
+    unsigned char b;
+    vt_size[n] = size;
+    if (!size)
+        return 1;
+    b = BankAlloc((unsigned char)(size >> 13) + 1);
+    if (!b)
+        return 0;
+    recb[n] = b;
+    for (at = 0; at < size; at += k) {
+        o = at & 0x1FFF;
+        k = 8191 - co;
+        if (k > 8192 - o)
+            k = 8192 - o;
+        if (k > size - at)
+            k = size - at;
+        BankCopy((void *)(0xA000 + co), (void *)(0xA000 + o), k, cb, b + (unsigned char)(at >> 13));
+        co += k;
+        if (co == 8191) {
+            co = 0;
+            ++cb;
+        }
+    }
+    return 1;
+}
+
+static unsigned char app_recs(void)
+{
+    unsigned char n;
+    load_error = newer;
+    if (apphdr[4] > 1)                  /* (its records' form) */
+        return 0;
+    cb = appbank;
+    co = 80;
+    load_error = "Not enough memory (RAM banks).";
+    for (n = 0; n < 4; ++n)
+        if (!app_rec(n, apphdr[6 + 2 * n] | (apphdr[7 + 2 * n] << 8))) {
+            runs_free();
+            return 0;
+        }
+    srcmode = 1;
+    return 1;
+}
+#else
+#define app_recs() 0
+#endif
+
 static void start(const char *name)
 {
     if (vx_used | vx_hide) {            /* the last program's look gone */
@@ -600,15 +676,16 @@ static void start(const char *name)
         vr_win(&win, "VeraBASIC Run");
     }
     vx_reset();
-    strcpy(docname, name);
-    strcpy(title, "VeraBASIC Run: ");
+    if (docname != name)
+        strcpy(docname, name);
+    strcpy(title, appbank ? "" : "VeraBASIC Run: ");
     strcat(title, name);
     vr_win_title(&win, title);
     con_reset();
     con_flush();
     ended = 0;
     srcmode = 0;
-    if ((!is_bas(name) || compile(name)) && load(name)) {
+    if ((appbank ? app_recs() : (!is_bas(name) || compile(name))) && load(name)) {
         status(name, "Running (Ctrl+C stops it)");
     } else {
         status(load_error, "");
@@ -1260,12 +1337,14 @@ void vb_idle(void)
     }
     if (vb_how == 3) {                  /* not loaded: an error in its text, or the file */
         PlaySound(SND_ERROR);
-        status(load_error, "Quit: VeraBASIC Run menu");
+        status(load_error, appbank ? "" : "Quit: VeraBASIC Run menu");
         strcpy(line, docname);
         message(line, load_error);
+        if (appbank)
+            EnterDeskTop();
         return;
     }
-    status("The program has ended.", "Quit: VeraBASIC Run menu");
+    status("The program has ended.", appbank ? "" : "Quit: VeraBASIC Run menu");
 #endif
 #endif
 }
@@ -1308,8 +1387,9 @@ static void init(unsigned char opts)
     dynbase = (unsigned int)_BSS_RUN__ + (unsigned int)_BSS_SIZE__;
     vb_fontload();
     cbank = BankAlloc(1);
-#ifndef VB_IDE
-    tbank = BankAlloc(1);               /* (the tests' lists and keys) */
+#ifdef VB_TEST
+    tbank = BankAlloc(1);               /* (the tests' lists and keys: DECISIONS V99, the
+                                           release builds keep the bank for the switcher) */
 #endif
     dispBufferOn = ST_WR_FORE | ST_WR_BACK;
     SetPattern(0);
@@ -1327,7 +1407,7 @@ static void init(unsigned char opts)
         for (i = 0; i < 3; ++i)
             ide_es[i] = ovl(IDE_REC_LOW + i);
         for (i = 0; i < IDE_NBANKS; ++i)
-            ide_banks[i] = ovl(i < 8 ? IDE_REC_BANK + i : IDE_REC_DBG + 1);
+            ide_banks[i] = ovl(i < 8 ? IDE_REC_BANK + i : IDE_REC_DBG + 1 + (i - 8));
         vx_dbg = ovl(IDE_REC_DBG);
         vb_dbg(D_INIT);                 /* (its variables cleared) */
         ide_ss = ide_s1 - ide_s0;
@@ -1342,7 +1422,25 @@ static void init(unsigned char opts)
         return;
     }
 #endif
+#ifdef VB_APP
+    if (!LoadOverlay(12, 0)) {          /* a made application (DECISIONS V99) */
+        appbank = r1L;                  /* (apphdr: OVL1BSS, overlay 1's bank) */
+        BankCopy((void *)0xA000, apphdr, 16, appbank, appBank);
+        if (memcmp(apphdr, "VBAP", 4))
+            appbank = 0;
+        else {
+            BankCopy((void *)0xA010, docname, 64, appbank, 0);
+            docname[63] = 0;
+            mbar.i[0].text = docname;   /* (its first menu: its name) */
+            mrun.i[1] = mrun.i[2];      /* (no Open program...) */
+            mrun.flags = VERTICAL | 2;
+            mrun.bottom = 16 + 2 * 16;
+        }
+    }
+    vr_win(&win, appbank ? docname : "VeraBASIC Run");
+#else
     vr_win(&win, "VeraBASIC Run");
+#endif
     theme_menus();
     DoMenu((void *)&mbar, 0);
     con_reset();
@@ -1380,6 +1478,14 @@ static void init(unsigned char opts)
     return;
 #endif
 #ifndef VB_IDE
+#ifdef VB_APP
+    if (appbank) {                      /* its program, with its document */
+        vb_appdoc = (opts & ST_LD_DATA) && dataLongName[0];
+        if (vb_appdoc && curDirName[0])
+            ChDir((char *)curDirName);
+        start(docname);
+    } else
+#endif
     if (opts & ST_LD_DATA)
         open_doc();
     else {

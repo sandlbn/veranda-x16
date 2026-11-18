@@ -15,6 +15,9 @@ language is in the [manual](manual/README.md).
 | `tools/vbrom.py` | the X16 ROM's maths routines in a small 65C02 emulator, for `run` | vbasic.py |
 | `tools/vbgen.py` | the generator: everything that comes from `vbasic/keywords.tbl` | maintainers, gate `vb_spec` |
 | `tools/vbfuzz.py` | random valid programs from a seed | gates `vb_spec`, `vb_tok` |
+| `tools/vbapp.py` | `vbasic.py app`: a program and VeraBASIC Run made into an application (DECISIONS V99) | vbasic.py, mkdist, gate `vb_app` |
+| `tools/vbimport.py` | `vbasic.py import`: a Commodore BASIC V2 `.PRG` as source | vbasic.py, gate `vb_app` |
+| `tools/vbmanual.py` | `vbasic.py doc`: the manual as HTML and PDF, the reference card's PDF (the standard library only) | vbasic.py, mkdist, gate `vb_app` |
 
 On the X16, *VeraBASIC Run* holds the same tokenizer and prepare in 6502
 assembly (overlays 2-5): it opens a `.bas` file as well as a program
@@ -25,7 +28,10 @@ bytes (G3).
 
     python3 -I vbasic.py check FILE.bas...
     python3 -I vbasic.py build FILE.bas -o OUT.cvt
+    python3 -I vbasic.py app FILE.bas [-o OUT.cvt] [--run RUN.cvt]
     python3 -I vbasic.py list FILE.cvt
+    python3 -I vbasic.py import FILE.PRG [-o OUT.bas]
+    python3 -I vbasic.py doc OUTDIR
     python3 -I vbasic.py canon FILE.bas [-o OUT.bas]
     python3 -I vbasic.py dump FILE.bas
     python3 -I vbasic.py run FILE.bas|FILE.cvt [--rom ROM] [--input KEYS] [--log] [--trace] [--replay LOG] [--dir DIR]
@@ -66,10 +72,43 @@ in VeraBASIC, the editor, which declares `documents = BAS` (V48, V93;
 Run declared it until V93), so `build` is for finished programs: it saves
 the tokenizing at each start, and a document cannot be edited by mistake.
 
+### app
+
+Makes a **standalone application** (DECISIONS V99), what the editor's
+*File > Make application...* makes, byte for byte but the date in the
+file's directory entry (bytes 23-27; gate `vb_app` compares the two):
+VeraBASIC Run's file (`--run`, else `$VB_RUN`, else `VeraBASIC Run.cvt`
+in the current folder) with the program's four records after Run's
+twelve, its info block and tile from the program's `APP` lines
+([FORMAT.md](FORMAT.md) section 7.3; the manual's chapter 7). The output
+defaults to `<APP NAME>.cvt`; an error in an `APP` line is reported as
+`file:line: message`.
+
+### import
+
+A tokenized Commodore BASIC V2 program (a `.PRG` as the C64 or the X16's
+BASIC saves it) as VeraBASIC text: each keyword token its word with
+blanks round it (a crunched `FORI=1TO9` becomes `FOR I=1 TO 9`), text in
+quotes, after `REM` and in `DATA` as it was, PETSCII to Latin-1 (a
+control character in quotes as `" + CHR$(n) + "`); an X16 BASIC
+statement (`$CE` and a byte) is kept as a comment, with a warning on
+standard error. The manual's chapter 8.
+
+### doc
+
+The manual (`tools/vbmanual.py`): `OUTDIR/html/` (a page a chapter,
+`index.html` the contents), `OUTDIR/VeraBASIC-manual.pdf` (the chapters
+of `vbmanual.CHAPTERS`, the contents with page numbers, bookmarks) and
+`OUTDIR/VeraBASIC-reference-card.pdf` (`refcard.md` on two A4 pages);
+then it checks them (the PDFs' cross-reference tables, the card's two
+pages, the HTML's links). The PDF writer is its own, with the standard
+fonts: no library beyond Python's.
+
 ### list
 
-The source of a program document, in canonical form: the way back when
-the `.bas` file is lost.
+The source of a program document, or of the program inside a made
+application, in canonical form: the way back when the `.bas` file is
+lost.
 
 ### canon
 

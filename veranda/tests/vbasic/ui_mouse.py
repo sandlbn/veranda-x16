@@ -20,13 +20,21 @@ NAME.ms, a command a line ('#' a comment):
     wheel N           a wheel movement (-8 .. 7)
     type TEXT         keys, as typed
     pause F           F frames
+    hold F            F frames, kept before a wait that follows (pause's
+                      frames count only for the next move or click)
     bar NAME ...      the menu bar's texts (the first: the program's name)
-    pick M I          a click on bar item M, then on its menu's item I
+    pick M I [F]      a click on bar item M, then (F frames later: 20) on its
+                      menu's item I
     open M            a click on bar item M (its menu stays open)
     home              the pointer's place not known: the next move goes
                       to 0, 0 first (after a program, a dialog box or a
                       menu moved it)
     exit              the emulator stops (its dumps)
+    name TEXT         wait until the program's docname (main.c: its name, a
+                      made application's) starts with TEXT (2 characters)
+    map FILE          the addresses (ready, events ...) from another
+                      program's map from here on (a session that goes
+                      from one program to another: gate vb_app)
 The pointer starts at 0, 0 (a move of -2000, -2000); the program's
 _vx_idle and _vx_evn (vbx.s) are read from the map. MIT licence (LICENSE).
 """
@@ -50,6 +58,7 @@ def addr(mapfile, name):
 
 def main(argv):
     src, mapfile, out = argv
+    mp = mapfile                # (map: another program's)
     idle, evn = addr(mapfile, '_vx_idle'), addr(mapfile, '_vx_evn')
     dlg = addr(mapfile, '_vx_dlg')
     dpc = idle - 2                  # (vbx.s: _vx_dpc, then _vx_idle)
@@ -92,7 +101,15 @@ def main(argv):
             continue
         w = ln.split()
         c = w[0]
-        if c == 'ready':
+        if c == 'map':
+            mp = ln.split(None, 1)[1]
+            idle, evn, dlg = addr(mp, '_vx_idle'), addr(mp, '_vx_evn'), addr(mp, '_vx_dlg')
+            dpc = idle - 2
+        elif c == 'name':
+            dn = addr(mp, '_docname')
+            for k, ch in enumerate(w[1][:2]):
+                wait(dn + k, ord(ch))
+        elif c == 'ready':
             wait(idle, 1)
         elif c == 'dpc':
             wait(dpc, int(w[1]))
@@ -120,13 +137,15 @@ def main(argv):
             f[0] += 30
         elif c == 'pause':
             f[0] += int(w[1])
+        elif c == 'hold':
+            at('id 3', int(w[1]))      # (a line of no effect at that frame)
         elif c == 'bar':
             bar = re.findall(r'"([^"]*)"', ln)
         elif c in ('pick', 'open'):
             xs = look_menu.bar(bar, ui=True)
             m = int(w[1])
             click((xs[m][0] + xs[m][1]) // 2, 8)
-            f[0] += 20
+            f[0] += int(w[3]) if c == 'pick' and len(w) > 3 else 20
             if c == 'pick':
                 # the kernel puts the pointer on the open menu's first item
                 # (its middle): from there down to item I

@@ -13,6 +13,8 @@
 #                   editor: apps/vbasic make ide; textkit, gate edit), gate_vb_quit.sh (every
 #                   example started from the shell and quit every way: the shell comes back),
 #                   gate_vb_debug.sh (the debugger: breaks, steps, the pane, the screen kept, TRON)
+#                   gate_vb_app.sh (Make application, the made application in the shell, the
+#                   manual: its listings, HTML and PDF; vbasic.py doc)
 all:
 	python3 -I -B tools/kbuild.py
 

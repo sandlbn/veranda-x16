@@ -16,7 +16,7 @@
 #    gate_edit.sh: the shell's windows, its tiles' screens among them)
 set -e
 cd "$(dirname "$0")/.."
-OUT=build/gate/vb_sdk
+OUT=${OUT:-build/gate/vb_sdk}
 PY="python3 -I -B"
 export CC65_HOME=${CC65_HOME:-$HOME/.local/share/cc65}
 

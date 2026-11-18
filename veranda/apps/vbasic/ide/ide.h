@@ -21,6 +21,8 @@
             names.c, an expression's tokens in B_LEX's tok.c, an error's
             statement in B_FMT's fmt_quote, the trace pane in B_FILE's
             trace.c; the runtime's side is overlay 12, vbdbg.s)
+     B_MK   File > Save program and Make application... (DECISIONS V99:
+            mk.c; record 25)
    A bank calls LOW and its own code; another bank's only through xcall
    (a void function; arguments in LOW's variables), which maps it and makes
    it appBank meanwhile (its dialog boxes' routines).
@@ -87,6 +89,7 @@ extern unsigned char lex_row;
 #define B_CMD  6
 #define B_LEX  7
 #define B_DBG  8                /* the debugger (dbg.c, DECISIONS V97) */
+#define B_MK   9                /* Save program, Make application (mk.c, DECISIONS V99) */
 extern unsigned char vx_dbg;    /* (its runtime's side, overlay 12: what the two share, dbgshare.h) */
 /* the debugger's pane at the right of the text while a program is stopped */
 #define PANE_W 33
@@ -160,10 +163,20 @@ void help_word(void), help_syntax(void);
 #define HF_TUTORIAL 1
 #define HF_ERRORS   2
 #define HF_EDITOR   3
-#define HF_N        4
+#define HF_MANUAL   4               /* (the manual, DECISIONS V99) */
+#define HF_N        5
 
 /* B_FMT (fmt.c) */
 void fmt_format(void);
+
+/* B_MK (mk.c, DECISIONS V99): after IR_FORMAT, when ide_make (LOW) is
+   MK_PROG or MK_APP; file_types (LOW): the Save dialog's filter, once */
+#define MK_PROG 1
+#define MK_APP  2
+extern unsigned char ide_make;
+extern const char *file_types;
+void mk_answer(void);
+void mn_saveprog(void), mn_makeapp(void);
 
 /* B_DBG (dbg.c), LOW's state of it (low.c) */
 extern unsigned char dbg_paused;        /* a program is stopped at a break */
