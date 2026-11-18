@@ -553,6 +553,14 @@ def speed(args):
     run, bbs = args
     cap = open(os.path.join(run, 'SPEED.TXT'), 'rb').read()
     sent = open(os.path.join(bbs, 'sent.bin'), 'rb').read()
+    # (V94) the modem's rate looked for before the dial: the answers to
+    # its commands (AT, ATB9600: those before the init string) are not
+    # shown or captured
+    cmds = json.load(open(os.path.join(bbs, 'bbs.json')))['commands']
+    k = cmds.index('ATV1') if 'ATV1' in cmds else 0
+    if sent[:6 * k] != b'\r\nOK\r\n' * k:
+        fail('the modem\'s first %d answers are not OK: %r' % (k, sent[:6 * k]))
+    sent = sent[6 * k:]
     if cap != sent:
         n = next((i for i in range(min(len(cap), len(sent))) if cap[i] != sent[i]), min(len(cap), len(sent)))
         fail('SPEED.TXT (%d bytes) differs from what was sent (%d bytes) at byte %d' % (len(cap), len(sent), n))

@@ -24,7 +24,7 @@
 #include "net.h"
 
 struct settings cfg = {
-    'V', 1, 0xE0, 4, 4, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0,     /* (V91: the TexElec card's 14.7456 MHz) */
+    'V', 2, 0xE0, 4, 4, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,     /* (V91: the TexElec card's 14.7456 MHz; V94: I off) */
     "ATV1", "ATI;ATI2", "time.nist.gov:13"
 };
 const unsigned int bauds[] = { 3, 12, 24, 48, 96, 192, 384, 576, 1152 };        /* hundreds */
@@ -36,6 +36,24 @@ unsigned char font[2048];
 unsigned char rxbuf[256];
 unsigned char restart;          /* the settings changed the port */
 static unsigned char ovl;       /* the overlay's bank (ui.c) */
+unsigned char term_ovl2;        /* overlay 2's (sync.c: the modem's rate, the date, V94) */
+#define ovl2 term_ovl2
+
+/* the modem's rate looked for (V94, sync.c); its end: what waited */
+static void sync_start(void)
+{
+    MAPBANK(ovl2);
+    o_sync();
+    status();
+}
+
+static void sync_done(void)
+{
+    LogText("TERM MODEM");
+    if (dialing == 4)
+        dial_go();
+    status();
+}
 static unsigned char mainbank;          /* the ring, the model (2), the scrollback */
 static unsigned char hbanks;
 static unsigned char nouart;
@@ -144,7 +162,9 @@ void status(void)
         *p++ = ':';
         p = put2(p, t % 60);
         *p++ = ' ';
-    } else if (dialing)
+    } else if (syncing)
+        p = put_str(p, "FINDING THE MODEM ");
+    else if (dialing)
         p = put_str(p, "DIALLING ");
     else if (hangup_state)
         p = put_str(p, "HANGING UP ");
@@ -545,7 +565,9 @@ static void clock_offer(void)
 {
     struct when w;
     char *p;
+    unsigned char wd;
     memcpy(&w, &net_time, sizeof w);
+    MAPBANK(ovl2);
     time_zone(&w, cfg.tz);
     p = put_str(oldt, "Now: ");
     fmt_when(p, year, month, day, hour, minutes, seconds);
@@ -553,7 +575,9 @@ static void clock_offer(void)
     fmt_when(p, w.yr, w.mon, w.dy, w.hr, w.mn, w.sec);
     if (!cfg.autoclock && !yesno(oldt, newt))
         return;
-    SetClock(w.yr, w.mon, w.dy, w.hr, w.mn, w.sec, weekday(&w));
+    MAPBANK(ovl2);
+    wd = weekday(&w);
+    SetClock(w.yr, w.mon, w.dy, w.hr, w.mn, w.sec, wd);
     LogText("TERM CLOCK SET");
 }
 
@@ -663,6 +687,7 @@ static void page_key(unsigned char k)
     if (p == 1 && restart) {
         restart = 0;
         nouart = ser_start();
+        sync_start();                   /* the modem's rate (V94) */
     }
     if (r == 2 && !online)
         dial(n, a);
@@ -1000,6 +1025,11 @@ static void tick(void)
             break;
         net_rx(rxbuf, n);
     }
+    if (syncing) {                      /* (V94) */
+        MAPBANK(ovl2);
+        if (o_sync_tick())
+            sync_done();
+    }
     net_tick();
     send_pump();
     info_pump();
@@ -1033,6 +1063,8 @@ int main(void)
     load_font();
     LoadOverlay(1, 0);
     ovl = r1L;
+    LoadOverlay(2, 0);
+    ovl2 = r1L;
     MAPBANK(ovl);
     o_load_settings();
     o_book_load();
@@ -1061,6 +1093,7 @@ int main(void)
     keyVector = VR_FN(key);
     appMain = VR_FN(tick);
     LogText(nouart ? "TERM RUNNING (NO UART)" : "TERM RUNNING");
+    sync_start();                       /* the modem's rate (V94) */
     vt_render();
     /* started with a .TEL document (Dex's Connect, a double click in the
        shell: DECISIONS V56): dial it */

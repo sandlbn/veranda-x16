@@ -129,6 +129,9 @@ static void test_start(void)
         cfg.tz = nb[0] - '0';
     cfg.backend = sess[0] == 'p';
     tstop = stopw[0];
+    if (sess[0] == 's' && tstop == 'a')
+        cfg.uirq = 1;                   /* (V94: I off by default; "aside" keeps
+                                           V91's case, the UART's interrupt on) */
     tstep = 1;
     tbase = ser_frames;
 }

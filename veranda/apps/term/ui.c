@@ -33,8 +33,13 @@ void o_load_settings(void)
     unsigned char h = fopen_sys("TERM.CFG", 'r');
     if (h < 2)
         return;
-    if (FRead(h, rxbuf, sizeof cfg) == sizeof cfg && rxbuf[0] == 'V' && rxbuf[1] == 1)
+    if (FRead(h, rxbuf, sizeof cfg) == sizeof cfg && rxbuf[0] == 'V' && (rxbuf[1] == 1 || rxbuf[1] == 2)) {
         memcpy(&cfg, rxbuf, sizeof cfg);
+        if (cfg.version == 1) {         /* (V94) a file from before: its I was the */
+            cfg.version = 2;            /* old default, on; the UART's interrupt */
+            cfg.uirq = 0;               /* is off now unless chosen again */
+        }
+    }
     FClose(h);
 }
 
