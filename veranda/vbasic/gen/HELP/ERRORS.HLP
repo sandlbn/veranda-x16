@@ -1,8 +1,12 @@
 = Errors
 The run-time errors: the editor shows one in the status bar, with its line
-in red (Error 13: Type mismatch (line 57)); TRY ... CATCH and ON ERROR GOTO
-catch them: ERR is the number, ERR$ the message, ERL the line. Check finds the
-other kind before a program runs: see @{Check messages}.
+in red, and whole in the pane at the right: the number and the message, a
+file's kernel error, the line, the procedure, the statement as Format writes
+it (Error 13, Type mismatch, in line 57 (SUB Tick): total% = name$); F1 there
+opens its page. The console says Error 13, Type mismatch, in line 57.
+TRY ... CATCH and ON ERROR GOTO catch them: ERR is the number, ERR$ the
+message, ERL the line, ERRFILE the kernel's error. Check finds the other
+kind before a program runs: see @{Check messages}. See also: @Debugging.
 
 @{Error 1} @{Error 2} @{Error 3} @{Error 4} @{Error 5} @{Error 6} @{Error 7}
 @{Error 8} @{Error 9} @{Error 10} @{Error 11} @{Error 12} @{Error 13}
@@ -16,7 +20,9 @@ See also: @TRY @ERR @ERL @ERROR @Contents
 = Error 1
 Stopped
 
-Ctrl+C, the STOP key, Run > Stop or a STOP statement stopped the program.
+Ctrl+C, the STOP key, Run > Stop or (in VeraBASIC Run) a STOP statement
+stopped the program. In the editor a STOP statement stops it as a breakpoint
+does, to go on (F6).
 
 See also: @Errors
 
@@ -204,7 +210,8 @@ See also: @Errors
 = Error 50
 File not found
 
-No file of that name in the folder (ERRFILE: the kernel's error).
+No file of that name in the folder. The message has the kernel's error too,
+(kernel 5), as ERRFILE gives it.
 
 See also: @Errors
 
@@ -254,7 +261,8 @@ See also: @Errors
 = Error 57
 Disk error
 
-The card or the folder said no (ERRFILE: the kernel's error).
+The card or the folder said no. The message has the kernel's error too,
+(kernel n), as ERRFILE gives it.
 
 See also: @Errors
 

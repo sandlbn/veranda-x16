@@ -338,6 +338,102 @@ static void detok_line(unsigned int off)
     (void)n;
 }
 
+/*---------------------------------------------------------------
+  the statement an error stopped the program in (DECISIONS V97): the debugger's
+  DI_QUOTE holds its tokens in the runtime's form (vbdbg.s d_quote), made
+  the file's form again here (a global's cell, a local's frame offset, a
+  procedure's or a label's target back to their symbols), then detokenized
+  as Format does: IDE_OUT, 0-ended ("" if it cannot be)
+ ---------------------------------------------------------------*/
+#include "dbgshare.h"
+void fmt_quote(void)
+{
+    unsigned char q[DQ_TOK], n, i = 6, t, k, pb, b;
+    unsigned int v, cell, off, s, o;
+    out[0] = 0;
+    bg_bank = vx_dbg;
+    bg_at = (void *)DI_QUOTE;
+    bg_to = q;
+    bg_n = DQ_TOK;
+    ide_bget();
+    r0b = vt_recb[0];
+    n = q[DQ_N];
+    if (!r0b || n > 240)
+        return;
+    pb = q[DQ_PBASE];
+    cell = q[DQ_CELL] | q[DQ_CELL + 1] << 8;
+    bg_at = (void *)(DI_QUOTE + DQ_TOK);
+    bg_to = rec + 6;
+    bg_n = n ? n : 1;
+    ide_bget();
+    rec[6 + n] = 0;
+    nsym = rw0(4);
+    nproc = rw0(6);
+    if (nsym > 512)
+        return;
+    off = 24;
+    for (s = 0; s < nsym; ++s) {
+        symo[s] = off;
+        rget(r0b, off + 7, &b, 1);
+        off += 8 + b;
+    }
+    proco = off;
+    lerr = 0;
+    while ((t = rec[i]) != 0) {
+        if ((t == ':' || t == 0x92) && i > 6)  /* (the statement's end: :, ELSE) */
+            break;
+        if (t >= 1 && t <= 3 || t == 0x0B)
+            i += 3;
+        else if (t == 4)
+            i += 7 + rec[i + 6];
+        else if (t == 5 || t == 9 || t == 10)
+            i += 2 + rec[i + 1];
+        else if (t == 6) {
+            v = rec[i + 1] | rec[i + 2] << 8;
+            v = v >= 0x0800 ? (v - cell) >> 3 : 0x8000 | v >> 3;
+            rec[i + 1] = (unsigned char)v;
+            rec[i + 2] = v >> 8;
+            i += 3;
+        } else if (t == 7)
+            i += 6;
+        else if (t == 8) {
+            v = 0xFFFF;
+            if (rec[i + 2] & 0x80) {    /* a procedure: its symbol */
+                o = proco;
+                for (k = 0; k < rec[i + 1] && k < nproc; ++k) {
+                    rget(r0b, o + 7, &b, 1);
+                    o += 9 + 3 * b;
+                }
+                v = rw0(o);
+            } else {                    /* a label: the symbol whose target is the record */
+                o = (rec[i + 5] - pb) * 7936 + (rec[i + 3] | rec[i + 4] << 8) - 0xA000;
+                for (s = 0; s < nsym; ++s) {
+                    rget(r0b, symo[s], &b, 1);
+                    if ((b & 32) && rw0(symo[s] + 2) == o) {
+                        v = s;
+                        break;
+                    }
+                }
+            }
+            rec[i + 1] = (unsigned char)v;
+            rec[i + 2] = v >> 8;
+            i += 6;
+        } else if (t == 0xFF)
+            i += 2;
+        else
+            ++i;
+        if (i >= 6 + n)
+            break;
+    }
+    rec[i] = 0;
+    rec[0] = i + 1;
+    rec[1] = rec[2] = rec[3] = rec[4] = rec[5] = 0;
+    detok_line(q[DQ_OFF] | q[DQ_OFF + 1] << 8);
+    out[on] = 0;
+    if (lerr)
+        out[0] = 0;
+}
+
 void fmt_format(void)
 {
     unsigned int off = 0, last = 0, src, i, size1;

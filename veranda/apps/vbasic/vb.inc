@@ -50,6 +50,7 @@ CON_Y   = 4                     ; card row of row 0
 VS_IDLE = 0
 VS_RUN  = 1
 VS_END  = 2                     ; ended (END, the last line, an error)
+VS_BRK  = 3                     ; (the editor) stopped by the debugger: it goes on (DECISIONS V97)
 
 VSTK    = 40 * 6                ; the value stack's bytes (6 a value)
 NTEMP   = 32                    ; temporary strings

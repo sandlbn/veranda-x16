@@ -31,7 +31,9 @@
    and, when TK_ROW_HOOK is defined, void TK_ROW_HOOK(unsigned char r): row
    r was drawn (gb_line, gb_mk... still its): the program's own
    colouring of it; when TK_SCROLL_HOOK(d) is defined, it follows a scroll of
-   the rows by d (the colour map does not move with ScrollRect).
+   the rows by d (the colour map does not move with ScrollRect); when
+   TK_FRAME_HOOK() is defined, it follows view_frame (the window drawn:
+   what the program draws beside the text, again).
 
    MIT licence (see LICENSE). */
 #ifndef TEXTKIT_H

@@ -1160,6 +1160,23 @@ m_again:
 @r:	clc
 	rts
 
+; the debugger's Continue (vbdbg.s, DECISIONS V97): the program's menus
+; again, if it showed them (their tables are where m_build left them; the
+; bar's pixels, its title too, come back from the debugger's copy)
+.ifdef VB_IDE
+g_reshow:
+	lda mshown
+	beq @r
+	jsr _theme_menus
+	lda _vx_cellend
+	sta r0
+	lda _vx_cellend+1
+	sta r0+1
+	lda #0
+	jmp DoMenu
+@r:	rts
+.endif
+
 ; MENU SHOW
 g_show:
 	lda mn

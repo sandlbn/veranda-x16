@@ -7,7 +7,8 @@
 #               these sources with VB_IDE (in $(OUT)/ide), the C overlays
 #               linked again for that main link, then the editor's own link
 #               (ide/ide.cfg): its main RAM part as records 12-14, its
-#               banks as records 15-20
+#               banks as records 15-22, the debugger (DECISIONS V97): the
+#               runtime's overlay 12 as record 23, its bank B9 as 24
 #   make idetest  the editor's test build (IDE_TEST: tests/edit_play.s plays
 #               IDE.PLY; in $(OUT)/idetest)
 # OUT: where the results go (default here)
@@ -17,7 +18,7 @@ GEN      ?= ../../vbasic/gen
 CC65     := cl65 -t none --cpu 65C02 -O -I $(SDK)/include --asm-include-dir $(SDK)/include --asm-include-dir $(GEN)
 .DEFAULT_GOAL := all
 SRC      := main.c vb.s
-DEPS     := vb.inc vbexpr.s vbstr.s vbio.s vbload.s vbtok.s vbprep.s vbphelp.s vbfloat.s vbx.s vbev.s vbui.s vbgfx.s vbdlg.s vbfile.s $(GEN)/tokens.inc
+DEPS     := vb.inc vbdbg.s vbdbg.inc vbexpr.s vbstr.s vbio.s vbload.s vbtok.s vbprep.s vbphelp.s vbfloat.s vbx.s vbev.s vbui.s vbgfx.s vbdlg.s vbfile.s $(GEN)/tokens.inc
 # the window chrome: the SDK's source compiled into overlay 7 (main RAM is
 # the interpreter's)
 VRWIN    := $(OUT)/vrwin.o
@@ -83,24 +84,26 @@ IDECC    := $(CC65) -I ide -I $(TK) -I $(GEN)
 # it (BnRO) where the kernel reads none of them (textkit's stay in LOW)
 IDE_LOW  := low ops undo text
 IDE_B1   := view keys
-IDE_B2   := file scrap cmd scrapio scraptbeg
-IDE_B4   := help
+IDE_B2   := file scrap cmd scrapio scraptbeg trace
+IDE_B4   := help names
 IDE_B5   := fmt
 IDE_B6   := syn
 IDE_B7   := cmd2 find
-IDE_B8   := colour
-IDEO     = $(foreach f,$(IDE_LOW) $(IDE_B1) $(IDE_B2) $(IDE_B4) $(IDE_B5) $(IDE_B6) $(IDE_B7) $(IDE_B8),$(IDED)/i_$(f).o) \
+IDE_B8   := colour tok
+IDE_B9   := dbg
+IDEO     = $(foreach f,$(IDE_LOW) $(IDE_B1) $(IDE_B2) $(IDE_B4) $(IDE_B5) $(IDE_B6) $(IDE_B7) $(IDE_B8) $(IDE_B9),$(IDED)/i_$(f).o) \
            $(IDED)/i_vrchoose.o $(IDED)/i_lows.o $(IDED)/i_buf.o
-IDEH     := ide/ide.h ide/ideshare.h ide/tkapp.h $(TK)/textkit.h $(GEN)/idekw.h
+IDEH     := ide/ide.h ide/ideshare.h ide/dbgshare.h ide/tkapp.h $(TK)/textkit.h $(GEN)/idekw.h
 $(foreach f,$(IDE_B1),$(IDED)/i_$(f).o): ISEG := --code-name B1CODE
 $(foreach f,$(IDE_B2),$(IDED)/i_$(f).o): ISEG := --code-name B2CODE -DSCRAP_PATH=scrap_path
-$(IDED)/i_cmd.o: ISEG := --code-name B2CODE --rodata-name B2RO
+$(IDED)/i_cmd.o $(IDED)/i_trace.o: ISEG := --code-name B2CODE --rodata-name B2RO
 $(foreach f,$(IDE_B4),$(IDED)/i_$(f).o): ISEG := --code-name B4CODE --rodata-name B4RO
 $(foreach f,$(IDE_B5),$(IDED)/i_$(f).o): ISEG := --code-name B5CODE --rodata-name B5RO
 $(foreach f,$(IDE_B6),$(IDED)/i_$(f).o): ISEG := --code-name B6CODE --rodata-name B6RO
 $(IDED)/i_cmd2.o: ISEG := --code-name B7CODE --rodata-name B7RO
 $(IDED)/i_find.o: ISEG := --code-name B7CODE
 $(foreach f,$(IDE_B8),$(IDED)/i_$(f).o): ISEG := --code-name B8CODE --rodata-name B8RO
+$(foreach f,$(IDE_B9),$(IDED)/i_$(f).o): ISEG := --code-name B9CODE --rodata-name B9RO --bss-name B9BSS
 $(IDED)/i_%.o: ide/%.c $(IDEH)
 	$(IDECC) $(IDEF) $(ICFLAGS) $(ISEG) -c -o $@ $<
 $(IDED)/i_%.o: $(TK)/%.c $(IDEH)
@@ -129,10 +132,11 @@ $(IDED)/vbide.bin: $(SRC) $(DEPS) app.hdr ide/ideshare.h $(PLAYER)
 $(IDED)/ide.low: $(IDED)/vbide.bin $(IDEO) ide/ide.cfg
 	$(CC65) -C ide/ide.cfg $$(python3 -I -B ../../tools/vbceq.py --ide $(IDED)/vbide.lbl) -m $(IDED)/ide.map -o $(IDED)/ide $(IDEO) $(IDED)/ideeq.o $(SDK)/lib/veranda.lib
 	python3 -I -B -c "import sys; d=open(sys.argv[1],'rb').read(); [open(sys.argv[1]+'.%d' % i,'wb').write(d[i*8191:(i+1)*8191] or b'\0') for i in range(3)]" $(IDED)/ide.low
-	for n in 1 2 3 4 5 6 7 8; do [ -s $(IDED)/ide.$$n ] || printf '\140' > $(IDED)/ide.$$n; done
+	for n in 1 2 3 4 5 6 7 8 9; do [ -s $(IDED)/ide.$$n ] || printf '\140' > $(IDED)/ide.$$n; done
 
 IDERECS  = $(IDED)/vbide.bin $(foreach n,1 2 3 4 5 6 7 8 9,$(IDED)/vbide.bin.$(n)) $(IDED)/vbc.a $(IDED)/vbc.b \
-           $(IDED)/ide.low.0 $(IDED)/ide.low.1 $(IDED)/ide.low.2 $(foreach n,1 2 3 4 5 6 7 8,$(IDED)/ide.$(n))
+           $(IDED)/ide.low.0 $(IDED)/ide.low.1 $(IDED)/ide.low.2 $(foreach n,1 2 3 4 5 6 7 8,$(IDED)/ide.$(n)) \
+           $(IDED)/vbide.bin.12 $(IDED)/ide.9
 $(IDED)/VeraBASIC.cvt: $(IDED)/ide.low ide/app.hdr ide/icon.pbm ide/tile.txt
 	python3 -I -B $(SDK)/tools/vpack.py --load 0x0801 -o $@ ide/app.hdr $(IDERECS)
 

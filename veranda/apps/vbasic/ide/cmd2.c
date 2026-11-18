@@ -17,18 +17,37 @@ unsigned char ide_lastreq;
   the requests: the text to a run of banks (B_FILE), then appMain's next
   pass goes to the runtime's side (LOW)
  ---------------------------------------------------------------*/
+/* (another bank's request: B9's) */
+unsigned char req_arg;
+void ide_request_x(void)
+{
+    ide_request(req_arg);
+}
+
+static const char stopped_msg[] = "A program is stopped: F6 goes on, Run > Stop ends it";
+
 void __fastcall__ ide_request(unsigned char r)
 {
     if (help_open)
         return;
+    if (dbg_paused && r < IR_CONT) {    /* (the debugger, DECISIONS V97) */
+        view_status_msg(stopped_msg);
+        return;
+    }
     XCALL(B_VIEW, view_off);
     XCALL(B_HELP, help_free);           /* (the help's banks: the tokenizer's, the program's) */
-    if (r != IR_OUTPUT) {
+    if (r < IR_OUTPUT) {
+        if (vt_recb[0] && !dbg_paused) {    /* (the last run's names) */
+            BankFree(vt_recb[0]);
+            vt_recb[0] = 0;
+        }
         XCALL(B_FILE, cmd_export);
         if (!export_ok)
             return;
     }
     ide_lastreq = r;
+    if (r == IR_RUN)
+        XCALL(B_DBG, dbg_prep);         /* the breakpoints, the trace emptied */
     vt_after = r == IR_CHECK ? (unsigned int)check_after : 0;
     check_after = 0;
     if (err_line || stop_line) {        /* (the old marks go: their rows drawn) */
@@ -51,11 +70,17 @@ void do_about(void)
     menus_off();
     message("VeraBASIC 1.0: the editor and the runtime,", "for Veranda. MIT licence");
 }
-void do_new(void) { menus_off(); XCALL(B_FILE, cmd_new); }
-void do_open(void) { menus_off(); XCALL(B_FILE, cmd_open); }
+static unsigned char paused(void)
+{
+    if (dbg_paused)
+        view_status_msg(stopped_msg);
+    return dbg_paused;
+}
+void do_new(void) { menus_off(); if (!paused()) XCALL(B_FILE, cmd_new); }
+void do_open(void) { menus_off(); if (!paused()) XCALL(B_FILE, cmd_open); }
 void do_save(void) { menus_off(); XCALL(B_FILE, cmd_save); }
 void do_saveas(void) { menus_off(); XCALL(B_FILE, cmd_saveas); }
-void do_quit(void) { menus_off(); XCALL(B_FILE, cmd_quit); }
+void do_quit(void) { menus_off(); if (!paused()) XCALL(B_FILE, cmd_quit); }
 void do_undo(void)
 {
     menus_off();
@@ -88,12 +113,24 @@ void do_nexterr(void)
     check_after = err_line;
     ide_request(IR_CHECK);
 }
-void do_run(void) { menus_off(); ide_request(IR_RUN); }
+void do_run(void)
+{
+    menus_off();
+    if (dbg_paused)
+        XCALL(B_DBG, dbg_cont);
+    else {
+        ide_step = 0;
+        ide_request(IR_RUN);
+    }
+}
 void do_check(void) { menus_off(); check_after = 0; ide_request(IR_CHECK); }
 void do_stop(void)
 {
     menus_off();
-    view_status_msg("No program runs (Ctrl+C stops one while it runs)");
+    if (dbg_paused)                     /* the stopped program ended */
+        ide_request(IR_DEND);
+    else
+        view_status_msg("No program runs (Ctrl+C stops one while it runs)");
 }
 void do_output(void) { menus_off(); ide_request(IR_OUTPUT); }
 static void help_page(const char *p, unsigned char f)
@@ -125,6 +162,7 @@ static void the_start(void)
 #endif
     ide_relayout();
     undo_init();
+    XCALL(B_DBG, dbg_init);             /* (the debugger: no breakpoints, no trace) */
     XCALL(B_FILE, doc_new);
     XCALL(B_FILE, cmd_layout);
     XCALL(B_VIEW, view_frame);
@@ -133,6 +171,18 @@ static void the_start(void)
     ide_redraw_menu();
     XCALL(B_VIEW, view_all);
     ide_log("IDE RUNNING\n");
+    ide_banks_log();
+}
+
+/* (the test build: the RAM banks for programs and those free, to the log) */
+void ide_banks_log(void)
+{
+#ifdef IDE_TEST
+    TaskCtl(TASK_INFO, 0xFF, lexbuf);
+    ide_logn("IDE BANKS ", lexbuf[TS_BANKS]);
+    ide_logn(" ", lexbuf[TS_FREE]);
+    ide_log("\n");
+#endif
 }
 
 void ide_resume(void)
@@ -321,7 +371,7 @@ void do_newline(void)
 void ide_relayout(void)
 {
     tk_x0 = gutter_on ? 5 : 0;
-    tk_cols = 79 - tk_x0;
+    tk_cols = (pane ? PANE_X : 79) - tk_x0;     /* (the debugger's pane at the right) */
     hs = 0;
 }
 
@@ -351,6 +401,13 @@ static void to_line(unsigned long n)
     memset(dirty, 1, ROWS);
 }
 
+/* (another bank's: B9's) */
+unsigned long jump_line;
+void ide_toline(void)
+{
+    to_line(jump_line);
+}
+
 /*---------------------------------------------------------------
   the answers (ideshare.h)
  ---------------------------------------------------------------*/
@@ -367,8 +424,18 @@ void fmt_answer(void)
     unsigned char r = ide_res;
     ide_logn("IDE ANSWER ", r);
     ide_logn(" ", ide_lastreq);
-    if (r == IA_LOAD)
+    if (r == IA_LOAD || r >= IA_BREAK)
         ide_log("\n");
+    if (r == IA_BREAK) {                /* the debugger's (DECISIONS V97) */
+        XCALL(B_DBG, dbg_break);
+        return;
+    }
+    if (r == IA_EVAL) {
+        XCALL(B_DBG, dbg_after);
+        return;
+    }
+    if (r >= IA_LOAD && r != 0xFF)
+        XCALL(B_DBG, dbg_ended);
     switch (r) {
     case IA_OK:
         if (ide_lastreq == IR_FORMAT) {
@@ -417,6 +484,13 @@ void fmt_answer(void)
         *p++ = ')';
         ide_logn(" ", vb_errno);
         ide_logn(" ", vb_esrc);
+        *p = 0;
+        ide_log("\n");
+        XCALL(B_DBG, dbg_error);        /* the message in the pane: the statement too */
+        view_status_msg(msg);
+        goto names;
+    case IA_DEND:
+        p = tk_put_s(p, "The program was ended");
         break;
     default:
         ide_log("\n");
@@ -425,6 +499,11 @@ void fmt_answer(void)
     *p = 0;
     ide_log("\n");
     view_status_msg(msg);
+names:
     vt_after = 0;
+    if (vt_recb[0] && r != IA_OK) {     /* (a run's names: the debugger's no more) */
+        BankFree(vt_recb[0]);
+        vt_recb[0] = 0;
+    }
 }
 

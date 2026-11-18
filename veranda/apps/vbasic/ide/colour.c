@@ -148,6 +148,8 @@ static void gutter(unsigned char r, unsigned int y, unsigned long line)
             if (!line)
                 break;
         }
+    if (line <= 0xFFFF && bp_has((unsigned int)line))
+        g[4] = '*';                     /* a breakpoint (DECISIONS V97: its card RED) */
     PutCards(g, vb_font, 0, 5, y, 0);
     (void)r;
 }
@@ -187,6 +189,8 @@ void ide_row(void)
         return;
     for (i = 0; i < X0; ++i)
         paper[i] = mark ? mark : CHROME;
+    if (X0 && line <= 0xFFFF && bp_has((unsigned int)line))
+        paper[4] = RED;
     for (i = 0; i < COLS; ++i) {
         k = lexcls[i];
         paper[X0 + i] = mark ? mark : k == K_STR ? YELLOW : k == K_REM ? SIDEBAR : 0;

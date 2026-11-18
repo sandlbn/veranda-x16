@@ -32,13 +32,16 @@
 .import _do_find, _do_findnext, _do_replnext, _do_goto, _do_nexterr
 .import _do_run, _do_check, _do_stop, _do_output, _do_newline
 .import _do_help, _do_contents, _do_index, _do_tutorial, _do_errors
+.import _dbg_cont, _dbg_step, _dbg_over, _dbg_out, _dbg_bp, _dbg_watch, _dbg_tron, _dbg_trace
 .import __VRWIN__, __VRTITLE__, __VRSTATUS__
 B_CMD = 6
+B_DBG = 8
 .import __BSS_RUN__, __BSS_SIZE__
 .import _docname
 .importzp ptr1
 .export _vr_win, _vr_win_title, _vr_win_status
 .export _xcall, _ide_fread, _fr_bank, _fr_at, _fr_n, _vb_docname, _ide_bget, _bg_bank, _bg_at, _bg_to, _bg_n
+.export _ide_bput
 
 _vb_docname = _docname          ; (main.c's: the run's title)
 
@@ -176,6 +179,29 @@ _ide_bget:
 	stx ram_bank
 	rts
 
+; void ide_bput(void): the other way: bg_n bytes from bg_to (below $A000)
+; to bg_at in bank bg_bank (the debugger's data bank: DECISIONS V97)
+_ide_bput:
+	lda _bg_to
+	sta @s+1
+	lda _bg_to+1
+	sta @s+2
+	lda _bg_at
+	sta @d+1
+	lda _bg_at+1
+	sta @d+2
+	ldx ram_bank
+	lda _bg_bank
+	sta ram_bank
+	ldy #0
+@s:	lda $FFFF,y
+@d:	sta $FFFF,y
+	iny
+	cpy _bg_n
+	bne @s
+	stx ram_bank
+	rts
+
 ; the menus' actions: B_CMD's do_* (the kernel calls with B_VIEW mapped)
 .macro MN name
 .export .ident(.concat("_mn_", name))
@@ -212,9 +238,28 @@ _ide_bget:
 	MN "index"
 	MN "tutorial"
 	MN "errors"
-mncall:	sta @f
+; the debugger's (B9's dbg_*, DECISIONS V97)
+.macro MD name
+.export .ident(.concat("_mn_", name))
+.ident(.concat("_mn_", name)):
+	lda #<.ident(.concat("_dbg_", name))
+	ldx #>.ident(.concat("_dbg_", name))
+	jmp mdcall
+.endmacro
+	MD "cont"
+	MD "step"
+	MD "over"
+	MD "out"
+	MD "bp"
+	MD "watch"
+	MD "tron"
+	MD "trace"
+mdcall:	ldy _ide_banks + B_DBG
+	bra mnc2
+mncall:	ldy _ide_banks + B_CMD
+mnc2:	sta @f
 	stx @f+1
-	lda _ide_banks + B_CMD
+	tya
 	jsr pusha
 	lda @f
 	ldx @f+1

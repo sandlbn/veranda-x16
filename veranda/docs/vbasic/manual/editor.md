@@ -66,6 +66,8 @@ double click selects a word, the wheel scrolls.
 | Ctrl+K, F8 | Check; the next error |
 | Ctrl+R, Ctrl+C | Run; Stop (while the program runs) |
 | F5 | the last program's output again |
+| F9, F6, F7, F10, F11 | a breakpoint; Continue, Step, Step over, Step out ([Debugging](debugging.md)) |
+| Ctrl+W, F12, Tab | a watch; the trace; the keys to the debugger's pane |
 | F1 | help on the keyword at the cursor |
 
 Cut, Copy and Paste use the Text Scrap, as Veranda Edit and geoWrite do,
@@ -102,7 +104,16 @@ ends:
 - stopped by **Ctrl+C** (or *Run > Stop*), the editor comes back with the
   line it was at in blue (*Stopped in line 12*);
 - stopped by an error, the editor comes back at its line, in red, with the
-  error in the status bar (`Error 11: Division by zero (line 3)`).
+  error in the status bar (`Error 11: Division by zero (line 3)`) and,
+  whole, in a pane at the right: the line, the procedure and the
+  statement in canonical form ([Debugging](debugging.md));
+- stopped at a breakpoint, a step or `{STOP}`, the program is kept: the
+  editor shows its line and the debugger's pane, and Continue (F6) sends
+  it on ([Debugging](debugging.md)).
+
+The *Run* menu has the debugger's commands under these: *Continue*,
+*Step*, *Step over*, *Step out*, *Breakpoint*, *Add a watch...*, *Trace
+(TRON)* and *The trace*.
 
 The editor's screen comes back as it was. **F5** (*Run > Output*) shows
 the last program's console again.
@@ -142,7 +153,7 @@ pages. In the help viewer:
 The help files are in `/VERANDA/HELP`: `KEYWORDS.HLP` (every keyword and
 constant: syntax, text, an example; made from the keyword table),
 `TUTORIAL.HLP` (the tutorial), `ERRORS.HLP` (the error messages) and
-`EDITOR.HLP` (this chapter). They are plain text that Veranda Edit reads
+`EDITOR.HLP` (this chapter and the next, *Debugging*). They are plain text that Veranda Edit reads
 too.
 
 ## Memory
@@ -150,8 +161,8 @@ too.
 The editor and the runtime share main RAM: the editor's own part takes
 the interpreter's place while you edit, and the two change places when
 you check or run. A program run from the editor has as much room for its
-names as under VeraBASIC Run (a little more: 2,538 bytes, about 300
-names). The editor keeps the text in RAM banks (64 KB at most for a
+names as under VeraBASIC Run (2,436 bytes, about 300 names; Run's are
+2,434). The editor keeps the text in RAM banks (64 KB at most for a
 program), two banks for undo, and while a program runs six banks for its
 screen when there are banks to spare; otherwise it draws its window again
 when you come back.
