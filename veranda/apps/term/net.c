@@ -44,17 +44,36 @@ unsigned char ser_probe(void)
     return 0;
 }
 
+static unsigned int divisor(unsigned char i)
+{
+    unsigned int b = bauds[i], d = (xtals[cfg.xtal] + b / 2) / b;
+    return d ? d : 1;
+}
+
 unsigned int ser_divisor(void)
 {
-    unsigned int b = bauds[cfg.baud], d = (xtals[cfg.xtal] + b / 2) / b;
-    return d ? d : 1;
+    return divisor(cfg.baud);
+}
+
+/* the UART at bauds[i] (V94: the modem's rate looked for); the FIFOs
+   cleared; IER as it was (DLM, not IER, is written under DLAB) */
+void uart_rate(unsigned char i)
+{
+    unsigned int d = divisor(i);
+    asm("sei");                 /* (the poll writes THR: DLL under DLAB) */
+    REG(3) = 0x83;
+    REG(0) = d;
+    REG(1) = d >> 8;
+    REG(3) = 0x03;
+    REG(2) = 0x87;
+    asm("cli");
 }
 
 static void lines_on(unsigned char on)
 {
     asm("sei");
     if (on) {
-        VERA_LINE = 120;
+        VERA_LINE = 60;                 /* (V94: the first of ser.s's lines) */
         VERA_IEN = (VERA_IEN & 0x7F) | 0x02;
     } else
         VERA_IEN &= 0x7D;
@@ -86,7 +105,10 @@ unsigned char ser_start(void)
     REG(2) = 0x87;              /* FIFOs on, cleared, receive trigger 8 */
     ser_mcr = 0x0B;             /* DTR, RTS, OUT2 (the interrupt's gate on PC-style cards) */
     REG(4) = ser_mcr;
-    ser_ier = cfg.uirq ? 0x05 : 0;      /* receive data and line status */
+    /* receive data and line status, only with settings/I on: by default
+       the UART never interrupts (IER 0, polled from VERA's line interrupt),
+       the set-up Packet16 runs on TexElec's card (V94) */
+    ser_ier = cfg.uirq ? 0x05 : 0;
     (void)REG(5);
     (void)REG(0);
     (void)REG(6);
@@ -184,9 +206,9 @@ void ser_byte(unsigned char c)
             return;             /* (the interrupt empties it) */
     ser_txbuf[ser_txhead] = c;
     ser_txhead = h;
-    if (ser_on == 1) {
+    if (ser_on == 1 && ser_ier) {       /* (V94: else the next poll sends it) */
         asm("sei");
-        REG(1) = ser_ier | 0x02;        /* the transmit interrupt (or the next poll) */
+        REG(1) = ser_ier | 0x02;        /* the transmit interrupt */
         asm("cli");
     }
 }
@@ -374,7 +396,8 @@ static char target[48];
 unsigned char hangup_state;
 static unsigned int htimer;
 static char mline[64];
-static unsigned char mlen;
+unsigned char net_mlen;        /* (V94: ui.c's o_sync too) */
+unsigned char syncing;
 unsigned char got_ok;
 unsigned char clockwant;        /* 1: a time line is looked for */
 struct when net_time;           /* the last date and time seen */
@@ -383,7 +406,7 @@ unsigned long rx_total;
 
 static void modem_line(void)
 {
-    mline[mlen] = 0;
+    mline[net_mlen] = 0;
     if (!memcmp(mline, "CONNECT", 7)) {
         online = 1;
         online_since = ser_frames;
@@ -401,6 +424,7 @@ static void modem_line(void)
     } else if (!strcmp(mline, "ERROR")) {
         got_ok = 2;
     }
+    MAPBANK(term_ovl2);         /* (parse_time: overlay 2, V94) */
     if (parse_time(mline, &net_time))
         net_time_ok = 1;
 }
@@ -408,18 +432,23 @@ static void modem_line(void)
 static void deliver(unsigned char c)
 {
     ++rx_total;
-    capture_byte(c);
-    if (xm_active) {
-        xm_byte(c);
-        return;
+    if (!syncing) {             /* (V94: while the modem's rate is looked
+                                   for, what comes at a wrong one is noise:
+                                   the result lines only, nothing shown) */
+        capture_byte(c);
+        if (xm_active) {
+            xm_byte(c);
+            return;
+        }
     }
     if (c == 13 || c == 10) {
-        if (mlen)
+        if (net_mlen)
             modem_line();
-        mlen = 0;
-    } else if (c >= 32 && mlen < sizeof mline - 1)
-        mline[mlen++] = c;
-    vt_put(c);
+        net_mlen = 0;
+    } else if (c >= 32 && net_mlen < sizeof mline - 1)
+        mline[net_mlen++] = c;
+    if (!syncing)
+        vt_put(c);
 }
 
 void net_rx(const unsigned char *p, unsigned int n)
@@ -428,7 +457,7 @@ void net_rx(const unsigned char *p, unsigned int n)
         rx(*p++);
 }
 
-static void sends(const char *s)
+void sends(const char *s)
 {
     while (*s)
         ser_byte(*s++);
@@ -447,6 +476,15 @@ void net_dial(const char *s)
     else
         tn_auto = cfg.telnet == 1;
     got_ok = 0;
+    dialing = 4;                /* (V94: after the modem's rate is found) */
+    if (!syncing)
+        dial_go();
+    status();
+}
+
+void dial_go(void)
+{
+    got_ok = 0;                 /* (the init string's own OK, not the sync's) */
     if (cfg.init[0]) {
         sends(cfg.init);
         ser_byte(13);
@@ -503,94 +541,4 @@ void net_tick(void)
         status();
     }
     xm_tick();
-}
-
-/*---------------------------------------------------------------
-  the date and time in a line: YY-MM-DD HH:MM:SS (the daytime service,
-  NIST's format) or YYYY-MM-DD[ T]HH:MM:SS (ISO); UTC
- ---------------------------------------------------------------*/
-static unsigned char num(const char *s, unsigned char n, unsigned int *v)
-{
-    unsigned int x = 0;
-    while (n--) {
-        if (*s < '0' || *s > '9')
-            return 0;
-        x = x * 10 + (*s++ - '0');
-    }
-    *v = x;
-    return 1;
-}
-
-unsigned char parse_time(const char *s, struct when *w)
-{
-    unsigned int y, mo, d, h, mi, se;
-    unsigned char yl;
-    for (; *s; ++s) {
-        for (yl = 4; yl >= 2; yl -= 2) {
-            const char *p = s;
-            if (!num(p, yl, &y) || p[yl] != '-')
-                continue;
-            p += yl + 1;
-            if (!num(p, 2, &mo) || p[2] != '-' || !num(p + 3, 2, &d) || (p[5] != ' ' && p[5] != 'T'))
-                continue;
-            p += 6;
-            if (!num(p, 2, &h) || p[2] != ':' || !num(p + 3, 2, &mi) || p[5] != ':' || !num(p + 6, 2, &se))
-                continue;
-            if (yl == 2)
-                y += 2000;
-            if (y < 2000 || y > 2099 || mo < 1 || mo > 12 || d < 1 || d > 31 || h > 23 || mi > 59 || se > 60)
-                continue;
-            w->yr = y - 1900;
-            w->mon = mo;
-            w->dy = d;
-            w->hr = h;
-            w->mn = mi;
-            w->sec = se > 59 ? 59 : se;
-            return 1;
-        }
-    }
-    return 0;
-}
-
-static unsigned char mdays(unsigned char m, unsigned char y)
-{
-    static const unsigned char dm[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-    return m == 2 && !(y & 3) ? 29 : dm[m - 1];
-}
-
-/* UTC + quarter hours, across days, months and years */
-void time_zone(struct when *w, signed char q)
-{
-    int m = (int)w->hr * 60 + w->mn + (int)q * 15;
-    while (m < 0) {
-        m += 1440;
-        if (--w->dy == 0) {
-            if (--w->mon == 0) {
-                w->mon = 12;
-                --w->yr;
-            }
-            w->dy = mdays(w->mon, w->yr);
-        }
-    }
-    while (m >= 1440) {
-        m -= 1440;
-        if (++w->dy > mdays(w->mon, w->yr)) {
-            w->dy = 1;
-            if (++w->mon > 12) {
-                w->mon = 1;
-                ++w->yr;
-            }
-        }
-    }
-    w->hr = m / 60;
-    w->mn = m % 60;
-}
-
-/* 1 Monday .. 7 Sunday (the RTC's day of the week; Sakamoto's method) */
-unsigned char weekday(const struct when *w)
-{
-    static const unsigned char t[12] = { 0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4 };
-    unsigned int y = 1900 + w->yr - (w->mon < 3);
-    unsigned char d = (y + y / 4 - y / 100 + y / 400 + t[w->mon - 1] + w->dy) % 7;
-    return d ? d : 7;
 }

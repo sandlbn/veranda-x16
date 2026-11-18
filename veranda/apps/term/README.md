@@ -66,10 +66,12 @@ second parser), UTF-8, XMODEM upload, ZMODEM.
 `ser.s` is Veranda's `intFirstVector` (DECISIONS V41): every interrupt
 reaches it first. It reads the UART's FIFO into an 8 KB ring in a RAM bank
 and refills the transmit FIFO from a 256-byte ring, on VERA's line
-interrupt (lines 120, 240, 360: with the frame's own, four times a frame,
-whether or not the card's interrupt line is wired) and on the UART's own
-interrupt (received data at 8 bytes, timeout, THR empty; through MCR OUT2,
-as on PC cards). RTS drops at 6 KB in the ring and comes back below 2 KB.
+interrupt (lines 60, 120 ... 420: with the frame's own, eight times a
+frame). The UART itself never interrupts by default (IER 0: polled only,
+as Packet16 runs on TexElec's card; DECISIONS V94); with settings/I on,
+its own interrupt (received data at 8 bytes, timeout, THR empty; through
+MCR OUT2, as on PC cards) brings it there too. RTS drops at 6 KB in the
+ring and comes back below 2 KB.
 The main loop takes the bytes, Telnet answers its options (ECHO, SGA,
 BINARY, TERMINAL-TYPE "ANSI", NAWS), the capture file and XMODEM take
 theirs, the screen the rest, and the screen is drawn when nothing else is
@@ -77,6 +79,16 @@ waiting (whole-window scrolls are joined into one `ScrollRect`).
 
 Measured in the emulator (tools/gate_term.sh): 9,602 bytes at 9600 baud
 in 10.08 s, none lost, 952 bytes/s (99 % of the line).
+
+**The modem's rate** (V94, after Packet16): at start, and when the
+settings change the port, Term sends `AT` at 115200, 57600, 38400, 19200
+and 9600 until the modem answers (the status line says FINDING THE
+MODEM; what comes meanwhile is not shown); found at another rate than
+settings/B, `ATB<rate>` moves the modem to B and the UART follows.
+Zimodem keeps its rate until it is powered off (115200 on TexElec's
+card), so Term and the modem agree without typing `ATB` by hand. Nothing
+answers (no modem, or it is online): the UART stays at B. A dial waits
+for it.
 
 A "script" back-end plays `TERM.IN` at the baud rate instead of a port
 (the gates without a serial line).
@@ -92,7 +104,7 @@ the baud rate, the crystal or the interrupt changed).
 | A, P | the UART's address ($9F60, $9F68 ... $9FF8); P probes $9F60-$9FF0 by $10 (the scratch register; a card's second port is 8 above) | $9FE0, else the first that answers at start |
 | B | baud rate 300-115200, 8N1 | 9600 |
 | C | the UART's crystal: 1.8432, 3.6864, 7.3728, 8.0, 14.7456, 16.0 MHz | 14.7456 (TexElec's card) |
-| I | the UART's own interrupt | on |
+| I | the UART's own interrupt (V94: off, polled only, as Packet16) | off |
 | E, R, T, K | local echo; a received CR as CR or CR LF; Return sends CR, CR LF or LF (CR NUL in Telnet); Backspace BS or DEL | off, CR, CR, BS |
 | N | Telnet: auto (after a host:port dial), always, never | auto |
 | O, S | ANSI colours; the scheme | on, light |
@@ -133,12 +145,13 @@ as a status command) offers the same.
 - **The crystal and the baud rate.** The divisor is crystal / 16 / baud:
   set C to the card's oscillator (TexElec's card: 14.7456 MHz, the default:
   divisor 921600 / baud; PC-style cards often 1.8432). The modem's own
-  rate must match: Zimodem's default and `ATB<rate>`, other ESP firmwares
-  `AT$SB=<rate>`; save it in the modem (`AT&W`).
-- **The interrupt.** If the card wires the UART's INT to the bus (a
-  jumper on some cards), I on lets bytes in between VERA's polls; at 9600
-  and below the polls alone are enough, above 19200 the interrupt is
-  needed (the FIFO holds 16 bytes; four polls a frame see ~4.2 ms apart).
+  rate must match: Term finds a Zimodem's rate itself and moves it to B
+  with `ATB` (V94); other ESP firmwares `AT$SB=<rate>`, typed by hand.
+- **The interrupt.** Off by default (V94): the UART is polled eight times
+  a frame (~2.1 ms apart; the FIFO's 16 bytes last 4.2 ms at 38400), the
+  set-up Packet16 has run on TexElec's card; the card's INT on the bus
+  was never tried on hardware. If the card wires it (a jumper on some
+  cards), I on lets bytes in between the polls, for 57600 and above.
   Some cards need MCR OUT2 for it (Veranda Term sets MCR $0B: DTR, RTS,
   OUT2; never AFE, which holds every byte sent while CTS is low, as it
   stays on TexElec's card). Put aside by the switcher (Alt+Tab), Term

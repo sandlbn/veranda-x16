@@ -2,14 +2,15 @@
 ;
 ; SerIrq is Veranda's intFirstVector (DECISIONS V41): the first thing in
 ; every interrupt, before the kernel saves anything. It
-;   - acknowledges VERA's line interrupt (three a frame, lines 120, 240
-;     and 360, besides the frame's own at 480: the UART is read every 4.2
-;     ms or so, 5 bytes at 9600 baud, whether or not the card's interrupt
-;     line is wired);
+;   - acknowledges VERA's line interrupt (seven a frame, lines 60, 120
+;     ... 420, besides the frame's own at 480: the UART is read every 2.1
+;     ms or so, 2 bytes at 9600 baud, 8 at 38400; V94);
 ;   - 16C550 back-end: empties the receive FIFO into the receive ring (8 KB,
 ;     $A000 of RAM bank ser_rxbank) and refills the transmit FIFO from the
-;     transmit ring (256 bytes); the chip's own interrupt (receive data,
-;     timeout, transmit empty) brings it here too, when the card has it;
+;     transmit ring (256 bytes). By default that is all: the UART's own
+;     interrupt stays off (IER 0) and it is polled, as Packet16 does on
+;     TexElec's card (V94). With settings/I on, the chip's interrupt
+;     (receive data, timeout, transmit empty) brings it here too;
 ;   - drops RTS when the ring is 3/4 full and raises it at 1/4 (a modem
 ;     with hardware flow control then waits; RTS is the X16's output, so
 ;     this needs no CTS: on a card whose modem ignores it, as far as is
@@ -60,7 +61,7 @@ _ser_mcr:    .byte $0B       ; DTR, RTS, OUT2
 _ser_ier:    .byte 0         ; the receive interrupts (U_IER bits 0, 2) or 0
 _ser_flow:   .byte 0         ; $80: RTS is down (the ring is full)
 lineIx:      .byte 0
-lines:       .word 120, 240, 360
+lines:       .word 60, 120, 180, 240, 300, 360, 420  ; (V94: 8 polls a frame)
 ; the script back-end
 _ser_sbank:  .byte 0         ; the bank and address of the next byte
 _ser_saddr:  .word $A000
@@ -85,7 +86,7 @@ _SerIrq:
 	ldx lineIx
 	inx
 	inx
-	cpx #6
+	cpx #14
 	bcc @l1
 	ldx #0
 @l1:	stx lineIx
@@ -161,8 +162,11 @@ Uart:	inc _ser_polls
 	dec cnt
 	bne @t1
 @tdone:	stx _ser_txtail
-	; the transmit interrupt only while there is more to send
+	; the transmit interrupt only while there is more to send, and only
+	; when the UART's interrupt is used at all (V94: I off, the default,
+	; IER stays 0: the polls alone)
 	lda _ser_ier
+	beq @t2
 	cpx _ser_txhead
 	beq @t2
 	ora #$02

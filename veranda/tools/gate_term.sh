@@ -157,11 +157,13 @@ if [ $UART = 1 ]; then
 		miss = [w for w in want if w not in ev]
 		if miss or not r['telnet_ok']:
 		    sys.exit('FAIL  Telnet replies missing: %s (got %s)' % (miss, ev))
-		if r['commands'][:2] != ['ATV1', 'ATDTbbs.test:23']:
+		# (V94) the modem's rate first: "AT" at 115200 answered (the fake
+		# answers at any rate), so "ATB9600" moves it to settings/B
+		if r['commands'][:4] != ['AT', 'ATB9600', 'ATV1', 'ATDTbbs.test:23']:
 		    sys.exit('FAIL  the modem got %s' % r['commands'])
 		if r.get('typed') != 'hello veranda':
 		    sys.exit('FAIL  typed: %r' % r.get('typed'))
-		print('ok    the modem got ATV1 (the init string) and ATDTbbs.test:23; Telnet: DO ECHO, DO SGA, WILL '
+		print('ok    the modem got AT and ATB9600 (its rate found, moved to 9600: V94), ATV1 (the init string) and ATDTbbs.test:23; Telnet: DO ECHO, DO SGA, WILL '
 		      'TERMINAL-TYPE (IS "ANSI"), WILL NAWS (80 x 55); "hello veranda" typed reached the BBS')
 		EOF
 		$CHK screen "$R" "$R/bbs/sent.bin" "$ROM" --stop $stop --title bbs.test:23 || fail "bbs $stop: the screen"

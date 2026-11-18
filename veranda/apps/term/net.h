@@ -31,6 +31,14 @@ void net_rx(const unsigned char *p, unsigned int n);
 void net_dial(const char *s);
 void net_hangup(void);
 void net_tick(void);
+extern unsigned char syncing;           /* (V94) the modem's rate looked for: */
+void o_sync(void);                      /* sync.c (overlay 2): from the start */
+unsigned char o_sync_tick(void);        /* each pass of the main loop meanwhile: 1 done */
+void dial_go(void);
+void sends(const char *s);
+void uart_rate(unsigned char i);        /* the UART at bauds[i] */
+extern unsigned char net_mlen;
+extern unsigned char term_ovl2;         /* term.c: overlay 2's bank */
 void net_dropped(void);                 /* term.c: the line was lost */
 extern unsigned char online, dialing, hangup_state, got_ok;
 extern unsigned int online_since;

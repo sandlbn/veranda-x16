@@ -6,7 +6,7 @@
 SDK      ?= ../../build/sdk
 OUT      ?= .
 CC65     := cl65 -t none --cpu 65C02 -Ors -Cl -I $(SDK)/include --asm-include-dir $(SDK)/include
-SRC      := term.c vt.c net.c xmodem.c ser.s ui.c
+SRC      := term.c vt.c net.c xmodem.c ser.s ui.c sync.c
 TEST_SRC ?= ../../tests/term_play.s
 # the clipboard: the SDK's scrap library compiled into overlay 1 (with
 # options/copy screen, ui.c), not linked from veranda.lib into the
@@ -23,7 +23,7 @@ $(OUT)/term.bin: $(SRC) term.h net.h app.hdr $(SCRAP)
 	$(CC65) $(CFLAGS) -C $(SDK)/cfg/app-c-ovl.cfg -Wl -D,__STACKSIZE__=0x400 -m $(OUT)/term.map -o $@ $(SRC) $(EXTRA) $(SCRAP) $(SDK)/lib/veranda.lib
 
 $(OUT)/Term.cvt: $(OUT)/term.bin icon.pbm tile.txt
-	python3 -I -B $(SDK)/tools/vpack.py --load 0x0801 -o $@ app.hdr $(OUT)/term.bin $(OUT)/term.bin.1
+	python3 -I -B $(SDK)/tools/vpack.py --load 0x0801 -o $@ app.hdr $(OUT)/term.bin $(OUT)/term.bin.1 $(OUT)/term.bin.2
 
 test:
 	rm -f $(OUT)/term.bin
@@ -33,6 +33,6 @@ run: $(OUT)/Term.cvt
 	$(SDK)/tools/vrun $(OUT)/Term.cvt
 
 clean:
-	rm -f *.o term.bin term.bin.1 term.map Term.cvt scrapio.o scraptbeg.o
+	rm -f *.o term.bin term.bin.1 term.bin.2 term.map Term.cvt scrapio.o scraptbeg.o
 
 .PHONY: all test run clean
