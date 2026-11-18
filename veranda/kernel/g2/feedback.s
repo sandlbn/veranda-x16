@@ -15,9 +15,14 @@
 ;   drew into sprite 0 itself (DrawSprite: slot offset 0, 32x32).
 ; - The system sounds (SndStep, kernel/g2/sound.s; Beep is one of them).
 ; - Blanking: blankDelay seconds without a key (kKeyAct, the main loop's
-;   KeyPoll), a pointer move or a button change turn the layers and
-;   sprites off (DC_VIDEO) and palette entry 0 black; the next input
-;   turns them back on. The key that wakes is dropped (KeyPoll sees
+;   KeyPoll), a pointer move or a button change close VERA's display
+;   window (DC_VSTOP 0: no active line, the whole screen the border, the
+;   layers and sprites with it) and make the border (DC_BORDER 0) and
+;   palette entry 0 black; the next input puts the three back. DC_VIDEO
+;   is never touched (V96): the ROM's mouse_scan turns the sprites on at
+;   every mouse packet (sprite_set_position), before the wake would have
+;   put the layers back, and the kernel reads the layer bits as the
+;   colour map's state. The key that wakes is dropped (KeyPoll sees
 ;   kBlanked); a button pressed to wake is taken away from the main loop
 ;   (SET_MOUSE cleared, mouseData up) until it is released.
 
@@ -39,7 +44,8 @@ idleF:		.res 1          ; frames to the next second
 idleS:		.res 2          ; seconds without input
 last:		.res 5          ; mouseXPos, mouseYPosW, mouseButtons as last seen
 swallow:	.res 1          ; $80: a button pressed to wake: hidden until released
-saveVid:	.res 1          ; DC_VIDEO before blanking
+saveStop:	.res 1          ; DC_VSTOP before blanking
+saveBord:	.res 1          ; DC_BORDER before blanking
 savePal:	.res 2          ; palette entry 0 before blanking
 
 .segment "CODE"
@@ -249,11 +255,17 @@ Idle:	; a button pressed to wake stays the screen's until it is let go
 	bcs Blank
 @r:	rts
 
-Blank:	stz VERA_CTRL
-	lda VERA_DC_VIDEO
-	sta saveVid
-	and #%10001111          ; the layers and sprites off
-	sta VERA_DC_VIDEO
+Blank:	lda #%00000010          ; DCSEL 1: the display window
+	sta VERA_CTRL
+	lda VERA_DC_VSTOP
+	bne @s
+	lda #480 >> 1           ; (0 would never wake: the whole height)
+@s:	sta saveStop
+	stz VERA_DC_VSTOP       ; no active line: all border
+	stz VERA_CTRL
+	lda VERA_DC_BORDER
+	sta saveBord
+	stz VERA_DC_BORDER      ; the border: entry 0
 	jsr Pal0
 	lda VERA_DATA0
 	sta savePal
@@ -265,21 +277,23 @@ Blank:	stz VERA_CTRL
 	LoadB kBlanked, $80
 	rts
 
-Wake:	stz VERA_CTRL
-	lda VERA_DC_VIDEO
-	and #%01110000
-	bne @p                  ; (a video mode set meanwhile)
-	lda saveVid
-	sta VERA_DC_VIDEO
-@p:	jsr Pal0
+Wake:	jsr Pal0
 	lda savePal
 	sta VERA_DATA0
 	lda savePal+1
 	sta VERA_DATA0
+	lda saveBord
+	sta VERA_DC_BORDER
+	lda #%00000010
+	sta VERA_CTRL
+	lda saveStop
+	sta VERA_DC_VSTOP
+	stz VERA_CTRL
 	stz kBlanked
 	rts
 
-Pal0:	LoadB VERA_ADDR_L, <VRAM_PALETTE
+Pal0:	stz VERA_CTRL
+	LoadB VERA_ADDR_L, <VRAM_PALETTE
 	LoadB VERA_ADDR_M, >VRAM_PALETTE
 	LoadB VERA_ADDR_H, ^VRAM_PALETTE | VERA_INC1
 	rts

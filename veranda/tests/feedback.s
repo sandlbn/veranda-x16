@@ -2,8 +2,9 @@
 ;
 ; A monitor in the interrupt (intBotVector, after Veranda's work) counts
 ; frames and logs a line whenever sprite 0's picture address or size,
-; DC_VIDEO, palette entry 0 or PSG voice 15 change:
-;   "F frame A addr size V dcvideo P pal0 Q freq vol wave"
+; DC_VIDEO, DC_VSTOP (the display window's end, V96), palette entry 0 or
+; PSG voice 15 change:
+;   "F frame A addr size V dcvideo W vstop P pal0 Q freq vol wave"
 ; The program (appMain) at its frames:
 ;   10 SetPointer(PTR_IBEAM), 20 PTR_CROSS, 30 PTR_BUSY (animated),
 ;   80 PTR_ARROW ("R" and the shape before);
@@ -50,6 +51,10 @@ Monitor:
 	lda VERA_DC_VIDEO
 	and #$7F                ; (bit 7: the current field)
 	sta now+3
+	LoadB VERA_CTRL, 2      ; DCSEL 1
+	lda VERA_DC_VSTOP
+	sta now+10
+	stz VERA_CTRL
 	LoadB VERA_ADDR_L, <VRAM_PALETTE
 	LoadB VERA_ADDR_M, >VRAM_PALETTE
 	lda VERA_DATA0
@@ -97,6 +102,10 @@ Monitor:
 	lda #'V'
 	jsr Sp
 	lda now+3
+	jsr PutHex
+	lda #'W'
+	jsr Sp
+	lda now+10
 	jsr PutHex
 	lda #'P'
 	jsr Sp
@@ -187,8 +196,7 @@ Phase2:	lda ph
 Ph:	.word PBlank, PKey, PAwake, PBlank, PPress, PClick, PEnd, Wait
 
 ; wait until blanked, then 20 frames
-PBlank:	lda VERA_DC_VIDEO
-	and #$70
+PBlank:	jsr VStop
 	bne @r
 	lda frame
 	clc
@@ -205,8 +213,7 @@ PKey:	lda frame
 	jsr k_kbdbuf_put
 	inc ph
 @r:	rts
-PAwake:	lda VERA_DC_VIDEO
-	and #$70
+PAwake:	jsr VStop
 	beq @r
 	LoadW r0, MsgIdle2
 	jsr LogText
@@ -269,6 +276,13 @@ PEnd:	lda frame
 	jmp $FFFF
 @r:	rts
 
+; z set: blanked (DC_VSTOP 0: no active line)
+VStop:	LoadB VERA_CTRL, 2
+	lda VERA_DC_VSTOP
+	stz VERA_CTRL
+	tax
+	rts
+
 ; mouseSource: the pointer at (300, 200), the button pb
 Source:	LoadW r0, 300
 	LoadW r1, 200
@@ -318,7 +332,7 @@ step:	.byte 0
 ph:	.byte 0
 kt:	.byte 0, 0
 pb:	.byte 0
-NOW = 10
+NOW = 11
 now:	.res NOW
 was:	.res NOW, $EE
 

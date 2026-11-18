@@ -70,10 +70,11 @@ def main():
     lines = [ln.strip() for ln in log.split('\n') if ln.strip()]
     ev = []                     # (kind, data)
     for ln in lines:
-        m = re.match(r'F ([0-9A-F]{4}) A ([0-9A-F]{4}) ([0-9A-F]{2}) V ([0-9A-F]{2}) P ([0-9A-F]{4}) '
-                     r'Q ([0-9A-F]{4}) ([0-9A-F]{2}) ([0-9A-F]{2})$', ln)
+        m = re.match(r'F ([0-9A-F]{4}) A ([0-9A-F]{4}) ([0-9A-F]{2}) V ([0-9A-F]{2}) W ([0-9A-F]{2}) '
+                     r'P ([0-9A-F]{4}) Q ([0-9A-F]{4}) ([0-9A-F]{2}) ([0-9A-F]{2})$', ln)
         if m:
-            ev.append(('F', [int(g, 16) for g in m.groups()]))
+            g = [int(x, 16) for x in m.groups()]
+            ev.append(('F', g[:4] + g[5:] + [g[4]]))     # d[8]: DC_VSTOP
         elif re.match(r'(SPIN START|SPIN END|IDLE|KEY|IDLE2|PRESS|CLICK|FEEDBACK DONE)$', ln):
             ev.append((ln, None))
         elif re.match(r'(R|K|C) [0-9A-F]{2}$', ln):
@@ -124,20 +125,24 @@ def main():
     # blanking
     ii = ev.index(('IDLE', None))
     fs = [(n, d) for n, (k, d) in enumerate(ev) if k == 'F' and n > ii]
-    blank = [(n, d) for n, d in fs if not d[3] & 0x70]
-    check(len(blank) >= 2 and blank[0][1][4] == 0, 'blanked: DC_VIDEO $%02X (layers and sprites off), palette '
-          'entry 0 $%04X' % (blank[0][1][3], blank[0][1][4]) if blank else 'blanked: never')
+    # (V96: the display window closed, DC_VIDEO left as it is: the ROM's
+    # mouse_scan turns the sprites on at every packet)
+    vid = [d[3] for n, d in fs][0] if fs else None
+    blank = [(n, d) for n, d in fs if not d[8]]
+    check(len(blank) >= 2 and blank[0][1][4] == 0 and all(d[3] == vid for n, d in fs),
+          'blanked: DC_VSTOP $00 (no active line: the border), palette entry 0 $%04X; DC_VIDEO $%02X throughout'
+          % (blank[0][1][4], vid) if blank else 'blanked: never')
     if blank:
         ik = ev.index(('KEY', None))
-        wake = [d for n, d in fs if n > ik and d[3] & 0x70]
-        check(bool(wake) and wake[0][4] == 0xFFF,
-              'a key wakes it: DC_VIDEO $%02X, palette entry 0 $%04X' % (wake[0][3], wake[0][4]) if wake else
+        wake = [d for n, d in fs if n > ik and d[8]]
+        check(bool(wake) and wake[0][4] == 0xFFF and wake[0][8] == 240,
+              'a key wakes it: DC_VSTOP $%02X, palette entry 0 $%04X' % (wake[0][8], wake[0][4]) if wake else
               'a key wakes it: no')
         check(not any(k.startswith('K ') for k, _ in ev), 'the key that woke it did not reach keyVector')
         ip = ev.index(('PRESS', None))
         ic = ev.index(('CLICK', None))
-        wake2 = [d for n, d in fs if n > ip and d[3] & 0x70]
-        again = [d for n, d in fs if n > ik and not d[3] & 0x70]
+        wake2 = [d for n, d in fs if n > ip and d[8]]
+        again = [d for n, d in fs if n > ik and not d[8]]
         check(bool(wake) and bool(again) and 115 <= again[0][0] - wake[0][0] <= 185,
               'blanked again 2 s after the key (no input since): frames $%04X to $%04X'
               % (wake[0][0], again[0][0]) if wake and again else 'blanked again: never')
