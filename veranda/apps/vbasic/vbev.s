@@ -68,6 +68,11 @@ o1_init:
 	stz evqt
 	stz swallow
 	stz pressed
+; the process table taken away (no timers, no wheel's poll): at a start and
+; at a program's end (_vx_end, DECISIONS V95). The kernel calls a process's
+; routine in appBank, which is the editor's view bank once VeraBASIC's
+; editor is back: a TIMER left running ran into its bytes there
+procs_off:
 	lda procs_on
 	beq @r
 	stz procs_on
@@ -324,8 +329,10 @@ dlg_press:
 dlg8:	ldy _vx_ovl8
 	jmp bcall
 
-; main.c: a program ended (its files closed, its sprites off) or starts
+; main.c: a program ended (its processes gone, its files closed, its
+; sprites off) or starts
 _vx_end:
+	jsr procs_off           ; its timers and the wheel's poll gone
 	lda #<f9_closeall
 	ldx #>f9_closeall
 	ldy _vx_ovl9
