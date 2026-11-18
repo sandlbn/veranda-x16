@@ -93,6 +93,7 @@ app apps/edit "$V/APPS" "Edit.cvt=Veranda Edit.cvt"
 app apps/view "$V/APPS" "View.cvt=View.cvt"
 app apps/archive "$V/APPS" "Archive.cvt=Archive.cvt"
 app apps/term "$V/APPS" "Term.cvt=Term.cvt"
+app apps/ftp "$V/APPS" "FTP.cvt=Veranda FTP.cvt"
 app apps/fonted "$V/APPS" "FontEd.cvt=FontEd.cvt"
 app apps/calc "$V/APPS" "Calculator.cvt=Calculator.cvt"
 app apps/notepad "$V/APPS" "NotePad.cvt=Note Pad.cvt"
@@ -218,6 +219,12 @@ application from /VERANDA/APPS (.X16S .XLSX .ODS .CSV Veranda Calc, .TXT
 Veranda Edit, .MOD MOD Player, .SID SID Player, .D64 .D71 .D81 Archive,
 .TEL Term, .BMP View, .BAS VeraBASIC). BASIC (keep Veranda): back with
 SYS 35328, or LOAD"RBOOT" and RUN (in /VERANDA).
+
+VERANDA FTP
+  An FTP client through TexElec's Serial & ESP32 Network Card (its Wi-Fi
+  modem): the card and a server side by side. Connection > Sites... saves
+  servers in /VERANDA/.SYSTEM/FTP.SITES; the passwords there are stored
+  as plain text.
 
 VERABASIC
   VeraBASIC is a BASIC with Veranda's windows, menus, dialogs and files:

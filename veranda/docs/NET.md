@@ -134,6 +134,13 @@ for more (the system's own work just after a switch can hold the
 interrupt off long enough to lose a byte). Around `GetFile` for a desk
 accessory, call `ser_pause()` and `ser_resume()` from `vrser.h`.
 
+**A file open across passes.** The switcher does not put aside a program
+with a stream open (it asks to quit it instead). A program that writes a
+download over many passes (Veranda FTP, DECISIONS V100) keeps vrnet's
+`asideVector` after `net_start` and sets its own: vrnet's first, then
+`FClose`; when it comes back it opens the file again (`'m'` to write on,
+`'r'` to read on) and `FSeek`s to where it was.
+
 ## Memory
 
 About 8.1 KB of code in the program (measured, cc65 -O: vrnet 6.0 KB,
