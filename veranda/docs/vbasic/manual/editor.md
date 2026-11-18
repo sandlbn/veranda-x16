@@ -1,4 +1,4 @@
-# The editor
+# 5. The editor
 
 *VeraBASIC* is the editor and the runtime in one program: you write a
 program, check it, run it and come back to it without leaving. It opens

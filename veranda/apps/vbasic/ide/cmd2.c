@@ -81,6 +81,20 @@ void do_open(void) { menus_off(); if (!paused()) XCALL(B_FILE, cmd_open); }
 void do_save(void) { menus_off(); XCALL(B_FILE, cmd_save); }
 void do_saveas(void) { menus_off(); XCALL(B_FILE, cmd_saveas); }
 void do_quit(void) { menus_off(); if (!paused()) XCALL(B_FILE, cmd_quit); }
+/* File > Save program, Make application... (DECISIONS V99): the records
+   made as for Format, then B_MK writes them (fmt_answer) */
+static void make(unsigned char m)
+{
+    menus_off();
+    if (paused())
+        return;
+    ide_make = m;
+    ide_request(IR_FORMAT);
+    if (ide_req != IR_FORMAT)
+        ide_make = 0;
+}
+void do_saveprog(void) { make(MK_PROG); }
+void do_makeapp(void) { make(MK_APP); }
 void do_undo(void)
 {
     menus_off();
@@ -421,7 +435,8 @@ static char *put_n(char *p, unsigned long n)
 void fmt_answer(void)
 {
     char *p = msg;
-    unsigned char r = ide_res;
+    unsigned char r = ide_res, mk = ide_make;
+    ide_make = 0;                       /* (B_MK's turn: this answer only) */
     ide_logn("IDE ANSWER ", r);
     ide_logn(" ", ide_lastreq);
     if (r == IA_LOAD || r >= IA_BREAK)
@@ -440,7 +455,11 @@ void fmt_answer(void)
     case IA_OK:
         if (ide_lastreq == IR_FORMAT) {
             ide_log("\n");
-            XCALL(B_FMT, fmt_format);
+            if (mk) {
+                ide_make = mk;
+                XCALL(B_MK, mk_answer);
+            } else
+                XCALL(B_FMT, fmt_format);
             return;
         }
         if (vt_after) {

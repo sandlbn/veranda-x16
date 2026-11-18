@@ -3,7 +3,12 @@
 
 usage: vbasic.py check FILE.bas...             structural errors as file:line: message
        vbasic.py build FILE.bas -o OUT.cvt     the program document VeraBASIC Run opens
-       vbasic.py list FILE.cvt                 a program document as source
+       vbasic.py app FILE.bas [-o OUT.cvt] [--run RUN.cvt]
+                                               a standalone application (tools/vbapp.py)
+       vbasic.py list FILE.cvt                 a program document (or a made application) as source
+       vbasic.py import FILE.PRG [-o OUT.bas]  a Commodore BASIC V2 program as source (tools/vbimport.py)
+       vbasic.py doc OUTDIR                    the manual as HTML and PDF, the reference card's PDF
+                                               (tools/vbmanual.py)
        vbasic.py canon FILE.bas                the canonical form
        vbasic.py run FILE.bas|FILE.cvt [--rom ROM] [--input KEYS] [--log] [--trace] [--replay LOG] [--dir DIR]
                                                the reference interpreter
@@ -2135,11 +2140,44 @@ STMTS = {
 def load(path):
     data = open(path, 'rb').read()
     if path.lower().endswith('.cvt'):
+        if len(data) > 400 and data[254 + 137 - 2:254 + 141 - 2] == b'VRND':
+            import vbapp            # a made application: its program
+            return T.decode_records(vbapp.read_app(data)[1])
         return T.read_document(data)
     prog = T.check_text(data)
     if prog.errors:
         raise SystemExit('\n'.join('%s:%d: %s' % (path, s, m) for s, m in prog.errors))
     return prog
+
+
+def make_app(rest, opts):
+    """vbasic.py app: File > Make application... on the PC (DECISIONS V99)"""
+    import vbapp
+    if len(rest) != 1:
+        print('app: FILE.bas [-o OUT.cvt] [--run RUN.cvt]', file=sys.stderr)
+        return 2
+    src = rest[0]
+    text = open(src, 'rb').read()
+    prog = T.check_text(text)
+    if prog.errors:
+        for s, m in prog.errors:
+            print('%s:%d: %s' % (src, s, m), file=sys.stderr)
+        return 1
+    base = os.path.basename(src)
+    if base.lower().endswith('.bas'):
+        base = base[:-4]
+    try:
+        a = vbapp.app_lines(text, base)
+        runf = opts.get('--run') or os.environ.get('VB_RUN') or 'VeraBASIC Run.cvt'
+        if not os.path.exists(runf):
+            raise vbapp.AppError(0, 'VeraBASIC Run is needed (--run): %s' % runf)
+        data = vbapp.make(open(runf, 'rb').read(), T.encode(prog), a)
+    except vbapp.AppError as e:
+        print('%s:%d: %s' % (src, e.line, e.msg) if e.line else '%s: %s' % (src, e.msg), file=sys.stderr)
+        return 1
+    out = opts.get('-o') or a['name'] + '.cvt'
+    open(out, 'wb').write(data)
+    return 0
 
 
 def maths_for(rom):
@@ -2175,7 +2213,7 @@ def main(argv):
     rest = []
     i = 0
     while i < len(args):
-        if args[i] in ('-o', '--rom', '--input', '--replay', '--dir'):
+        if args[i] in ('-o', '--rom', '--input', '--replay', '--dir', '--run'):
             opts[args[i]] = args[i + 1]
             i += 2
         elif args[i] in ('--log', '--trace'):
@@ -2184,6 +2222,14 @@ def main(argv):
         else:
             rest.append(args[i])
             i += 1
+    if cmd == 'list' and rest and rest[0].lower().endswith('.cvt'):
+        import vbapp
+        try:
+            sys.stdout.write(T.detok(load(rest[0])))     # (a made application too)
+        except (T.VBError, vbapp.AppError) as e:
+            print('%s: %s' % (rest[0], e), file=sys.stderr)
+            return 1
+        return 0
     if cmd in ('check', 'canon', 'list', 'dump'):
         return T.main([cmd] + rest + (['-o', opts['-o']] if '-o' in opts else []))
     if cmd == 'build':
@@ -2191,6 +2237,36 @@ def main(argv):
             print('build: FILE.bas -o OUT.cvt', file=sys.stderr)
             return 2
         return T.main(['tok', rest[0], '-o', opts['-o']])
+    if cmd == 'app':
+        return make_app(rest, opts)
+    if cmd == 'doc':
+        import vbmanual
+        if len(rest) != 1:
+            print('doc: OUTDIR', file=sys.stderr)
+            return 2
+        files = vbmanual.build(rest[0])
+        bad = vbmanual.check(rest[0])
+        for b in bad:
+            print('doc: ' + b, file=sys.stderr)
+        print('doc: %d files in %s' % (len(files), rest[0]))
+        return 1 if bad else 0
+    if cmd == 'import':
+        import vbimport
+        if len(rest) != 1:
+            print('import: FILE.PRG [-o OUT.bas]', file=sys.stderr)
+            return 2
+        try:
+            text, warn = vbimport.import_prg(open(rest[0], 'rb').read())
+        except vbimport.ImportError_ as e:
+            print('%s: %s' % (rest[0], e), file=sys.stderr)
+            return 1
+        for w in warn:
+            print('%s: %s' % (rest[0], w), file=sys.stderr)
+        if '-o' in opts:
+            open(opts['-o'], 'w', encoding='latin-1', newline='\n').write(text)
+        else:
+            sys.stdout.write(text)
+        return 0
     if cmd == 'run':
         prog = load(rest[0])
         keys = open(opts['--input'], 'rb').read() if '--input' in opts else b''

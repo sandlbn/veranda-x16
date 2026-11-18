@@ -40,7 +40,7 @@
 #define IDE_REC_LOW  12
 #define IDE_REC_BANK 15
 #define IDE_REC_DBG  23
-#define IDE_NBANKS   9
+#define IDE_NBANKS   10        /* (B10, record 25: Save program, Make application, V99) */
 
 extern unsigned char ide_req, ide_res, ide_opts;
 extern unsigned char ide_banks[IDE_NBANKS];     /* the editor's banks (records 15 ...) */

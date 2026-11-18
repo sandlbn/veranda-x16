@@ -1,16 +1,21 @@
-; Veranda Term: the serial driver's interrupt half (MIT, Veranda's own)
+; vrser: the serial driver's interrupt half, in the SDK (DECISIONS V98;
+; Veranda Term's ser.s, V41, V91, V94, moved here unchanged so that Term
+; and vrnet share one driver). MIT licence, Veranda's own.
 ;
 ; SerIrq is Veranda's intFirstVector (DECISIONS V41): the first thing in
 ; every interrupt, before the kernel saves anything. It
-;   - acknowledges VERA's line interrupt (seven a frame, lines 60, 120
+;   - acknowledges VERA's line interrupt: seven a frame, lines 60, 120
 ;     ... 420, besides the frame's own at 480: the UART is read every 2.1
-;     ms or so, 2 bytes at 9600 baud, 8 at 38400; V94);
+;     ms or so, 2 bytes at 9600 baud, 8 at 38400 (V94); with ser_fast set
+;     (vrnet) fifteen, lines 30, 60 ... 450: every 1.05 ms, 6 bytes at
+;     57600, 12 at 115200, inside the 16-byte FIFO;
 ;   - 16C550 back-end: empties the receive FIFO into the receive ring (8 KB,
 ;     $A000 of RAM bank ser_rxbank) and refills the transmit FIFO from the
 ;     transmit ring (256 bytes). By default that is all: the UART's own
 ;     interrupt stays off (IER 0) and it is polled, as Packet16 does on
-;     TexElec's card (V94). With settings/I on, the chip's interrupt
-;     (receive data, timeout, transmit empty) brings it here too;
+;     TexElec's card (V94). With ser_ier set (Term's settings/I), the
+;     chip's interrupt (receive data, timeout, transmit empty) brings it
+;     here too;
 ;   - drops RTS when the ring is 3/4 full and raises it at 1/4 (a modem
 ;     with hardware flow control then waits; RTS is the X16's output, so
 ;     this needs no CTS: on a card whose modem ignores it, as far as is
@@ -22,15 +27,15 @@
 ; It returns c set: what it serves needs nothing more, so the kernel ends
 ; an interrupt that VERA did not raise (V41).
 ;
-; The C side (term.c) programs the chip and reads the ring; this file has
-; no entry points but SerIrq.
+; The C side (vrserc.c, vrser.h) programs the chip and reads the ring;
+; this file has no entry points but SerIrq.
 
 .export _SerIrq
 .export _ser_on, _ser_lo, _ser_rxbank, _ser_rxhead, _ser_rxtail
 .export _ser_txbuf, _ser_txhead, _ser_txtail, _ser_lost, _ser_oe
 .export _ser_frames, _ser_mcr, _ser_ier, _ser_flow
 .export _ser_sbank, _ser_saddr, _ser_send, _ser_rate, _ser_logbank, _ser_logpos
-.export _ser_polls
+.export _ser_polls, _ser_fast, _ser_lineix
 
 ram_bank  = $00
 VERA_IEN  = $9F26
@@ -60,8 +65,11 @@ _ser_polls:  .word 0         ; times the UART was read
 _ser_mcr:    .byte $0B       ; DTR, RTS, OUT2
 _ser_ier:    .byte 0         ; the receive interrupts (U_IER bits 0, 2) or 0
 _ser_flow:   .byte 0         ; $80: RTS is down (the ring is full)
-lineIx:      .byte 0
-lines:       .word 60, 120, 180, 240, 300, 360, 420  ; (V94: 8 polls a frame)
+_ser_fast:   .byte 0         ; 0: 8 polls a frame (Term, V94); 1: 16 (vrnet)
+_ser_lineix:
+lineIx:      .byte 2         ; (the line armed: lines + lineIx; ser_lines)
+; every 30th line: 8 polls a frame take every other one, from 60 (V94)
+lines:       .word 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360, 390, 420, 450
 ; the script back-end
 _ser_sbank:  .byte 0         ; the bank and address of the next byte
 _ser_saddr:  .word $A000
@@ -86,7 +94,15 @@ _SerIrq:
 	ldx lineIx
 	inx
 	inx
-	cpx #14
+	lda _ser_fast
+	bne @fa
+	inx                     ; (8 a frame: 60, 120 ... 420)
+	inx
+	cpx #28
+	bcc @l1
+	ldx #2
+	bra @l1
+@fa:	cpx #30                 ; (16 a frame: 30, 60 ... 450)
 	bcc @l1
 	ldx #0
 @l1:	stx lineIx

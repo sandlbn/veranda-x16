@@ -25,7 +25,7 @@ def main():
     mk = open(os.path.join(d, 'Makefile')).read()
     tk = os.path.join(d, '..', '..', 'sdk', 'lib', 'textkit')
     parts = {}
-    for m in re.finditer(r'^IDE_(LOW|B\d)\s*:=\s*(.*)$', mk, re.M):
+    for m in re.finditer(r'^IDE_(LOW|B\d+)\s*:=\s*(.*)$', mk, re.M):
         for n in m.group(2).split():
             parts[n] = m.group(1)
     defs, bodies = {}, []

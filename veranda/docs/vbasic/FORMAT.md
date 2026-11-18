@@ -318,8 +318,8 @@ as above (an empty record is 0/`$FF` in the record table). The GEOS name
 inside is the file name's first 16 characters (without `.cvt`); the FAT
 name may be up to 63 (DECISIONS V82). `vbasic.py build` writes it,
 `vbasic.py list` reads it back to source; `vpack.py --list` shows it. A
-standalone application (phase 7) carries the same four records after
-Run's.
+standalone application carries the same four records after Run's
+(section 7.3).
 
 **Opening it.** A double click in the shell on a GEOS document (type
 `APPL_DATA`) starts the application of its parent class: the info block's
@@ -346,6 +346,45 @@ Where its memory ends, it reports an error the PC would not:
 The PC's checks of names and line numbers in use (*Undefined line*,
 *Undefined label*, *Undefined SUB*) cover the first 2,730 uses on the
 X16; a program with more is still checked by Run when it runs.
+
+### 7.3 A made application
+
+*File > Make application...* in the editor and `vbasic.py app` (DECISIONS
+V99) write the same file: VeraBASIC Run's (`VRND`, API 6, banked
+overlays) with these changes.
+
+| Where | What |
+|---|---|
+| directory entry 3-18 | the GEOS name: `APP NAME`'s first 16 characters, `$A0` padded |
+| directory entry 23-27, 28-29 | the date of the making; the blocks |
+| CVT 96, 97-224 | the tile: `APP TILE`'s colour, `TILE DATA`'s 32 rows (else Run's) |
+| info 77-96 | the class: `APP CLASS` (default: the name's first 12 characters) padded to 12, `V`, `APP VERSION` (`1.0`) |
+| info 97-116 | `APP AUTHOR` |
+| info 143 | flags: 1 (banked) + 2 (a tile) + 4 with `APP STAY` |
+| info 144-159 | `APP DOCUMENTS`: four slots of 4, upper case, blank padded |
+| info 160-255 | `APP DESCRIPTION` |
+| records 0-11 | VeraBASIC Run's, as they are |
+| records 12 on | the program, 8191 bytes a record (a banked overlay's most) |
+
+The program's bytes, cut into those records, are an 80-byte header and
+the program document's four records one after the other:
+
+| Offset | Bytes | |
+|---|---|---|
+| 0 | 4 | `VBAP` |
+| 4 | 1 | the form of these records (1); a later one: *Made by a newer VeraBASIC* |
+| 5 | 1 | the token format (record 0's byte 2) |
+| 6 | 8 | the sizes of records 0-3 |
+| 14 | 2 | 0 |
+| 16 | 64 | the name (`APP NAME`), 0-terminated |
+
+VeraBASIC Run, started, looks for record 12 (`LoadOverlay`): with `VBAP`
+there it is an application. It copies the four records out of its own
+banks into runs as the tokenizer leaves them, loads the program as from a
+document, names its first menu and its window after the program, leaves
+out *Open program...*, and runs it; started with a document (one of its
+`APP DOCUMENTS` extensions, `ST_LD_DATA`), `DOCUMENT$` is the document's
+whole name (`dataLongName`) and the current folder the document's.
 
 ## 8. `tokens.inc`
 

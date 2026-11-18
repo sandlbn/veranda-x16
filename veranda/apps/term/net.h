@@ -2,28 +2,12 @@
 #ifndef NET_H
 #define NET_H
 
-/* ser.s: the interrupt half */
-void SerIrq(void);
-extern volatile unsigned char ser_on, ser_lo, ser_rxbank, ser_mcr, ser_ier, ser_flow;
-extern volatile unsigned int ser_rxhead, ser_rxtail, ser_lost, ser_oe, ser_frames, ser_polls;
-extern volatile unsigned char ser_txbuf[256];
-extern volatile unsigned char ser_txhead, ser_txtail;
-extern volatile unsigned char ser_sbank, ser_rate, ser_logbank;
-extern volatile unsigned int ser_saddr, ser_send, ser_logpos;
-
-unsigned char ser_at(unsigned char lo);
-unsigned char ser_probe(void);
-unsigned int ser_divisor(void);
+/* the serial driver: the SDK's (V98) */
+#include <vrser.h>
+unsigned int ser_divisor(void);         /* settings/B at settings/X */
 unsigned char ser_start(void);          /* 0 ok, 1 no UART at cfg.port */
-void ser_stop(void);
-void ser_pause(void);
-void ser_resume(void);
-void ser_aside(void);                  /* asideVector (V91) */
-void ser_wake(void);                   /* the main loop: armed again after it */
-unsigned char ser_msr(void);
-unsigned int ser_get(unsigned char *buf, unsigned int max);
-void ser_byte(unsigned char c);
-unsigned char ser_txroom(void);
+void term_aside(void);                  /* asideVector (V91) */
+void term_wake(void);                   /* the main loop: armed again after it */
 
 extern unsigned char tn_on, tn_echo, tn_bin, tn_seen, tn_auto;
 void net_send(unsigned char c);         /* a byte to the host (IAC doubled) */
@@ -36,7 +20,6 @@ void o_sync(void);                      /* sync.c (overlay 2): from the start */
 unsigned char o_sync_tick(void);        /* each pass of the main loop meanwhile: 1 done */
 void dial_go(void);
 void sends(const char *s);
-void uart_rate(unsigned char i);        /* the UART at bauds[i] */
 extern unsigned char net_mlen;
 extern unsigned char term_ovl2;         /* term.c: overlay 2's bank */
 void net_dropped(void);                 /* term.c: the line was lost */

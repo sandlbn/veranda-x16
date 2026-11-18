@@ -1053,10 +1053,21 @@ fol3:	.byte VR_FONTSDIR, 0
 fol4:	.byte VR_SYSDIR, 0
 fol5:	.byte VR_DATADIR, 0
 
-; DOCUMENT$: the document a made application was opened with (phase 7);
-; VeraBASIC Run is opened with the program itself: ""
+; DOCUMENT$: the document a made application was opened with (DECISIONS
+; V99: its whole name, dataLongName; main.c's _vb_appdoc set); VeraBASIC Run
+; is opened with the program itself: ""
+.import _vb_appdoc
 f9_document:
-	stz t0
+	ldy #0
+	lda _vb_appdoc
+	beq @r
+@c:	lda dataLongName,y
+	beq @r
+	sta sbufa,y
+	iny
+	cpy #63
+	bne @c
+@r:	sty t0
 	rts
 
 ;---------------------------------------------------------------

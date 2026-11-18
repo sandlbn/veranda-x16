@@ -1,4 +1,4 @@
-# VeraBASIC: the Veranda extensions, part 1
+# 3. Veranda extensions, part 1
 
 This chapter covers the statements and functions that make a VeraBASIC
 program a Veranda program: events, windows, menus, graphics, text and

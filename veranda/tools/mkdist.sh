@@ -12,9 +12,12 @@
 #   VERANDA/WALLPAPERS/ Dusk.cvt, the desktop's default picture (tools/mkwall.py
 #                       --dusk; DECISIONS V78), and Meadow.cvt
 #                       (tools/wallpapers/mkmeadow.py; needs Pillow)
-#   VERANDA/HELP/       VeraBASIC's help (VR_HELPDIR, DECISIONS V93)
+#   VERANDA/HELP/       VeraBASIC's help (VR_HELPDIR, DECISIONS V93), the
+#                       manual in help form, the reference card's PDF (V99)
 #   DOCUMENTS/          the user's files: VeraBASIC Examples/ (the example
-#                       programs and the tutorial's steps)
+#                       programs and the tutorial's steps), Garden.brd (Bird
+#                       Watch's document; Bird Watch, a made application,
+#                       is in VERANDA/APPS: V99)
 # No .SYSTEM: the shell makes it, and Veranda Setup, which moves a card of
 # the layout before into this one, runs once on it (its LAYOUT.LOG there).
 #
@@ -93,6 +96,7 @@ app apps/edit "$V/APPS" "Edit.cvt=Veranda Edit.cvt"
 app apps/view "$V/APPS" "View.cvt=View.cvt"
 app apps/archive "$V/APPS" "Archive.cvt=Archive.cvt"
 app apps/term "$V/APPS" "Term.cvt=Term.cvt"
+app apps/ftp "$V/APPS" "FTP.cvt=Veranda FTP.cvt"
 app apps/fonted "$V/APPS" "FontEd.cvt=FontEd.cvt"
 app apps/calc "$V/APPS" "Calculator.cvt=Calculator.cvt"
 app apps/notepad "$V/APPS" "NotePad.cvt=Note Pad.cvt"
@@ -111,7 +115,11 @@ cp "$b/VBRun.cvt" "$V/APPS/VeraBASIC Run.cvt"
 # its help (VR_HELPDIR) and the example programs
 mkdir -p "$V/HELP" "$DEST/DOCUMENTS/VeraBASIC Examples"
 $PY tools/vbgen.py >/dev/null || die "vbgen.py (the help files)"
-cp vbasic/gen/HELP/KEYWORDS.HLP vbasic/gen/HELP/ERRORS.HLP vbasic/gen/HELP/TUTORIAL.HLP vbasic/gen/HELP/EDITOR.HLP "$V/HELP/"
+cp vbasic/gen/HELP/KEYWORDS.HLP vbasic/gen/HELP/ERRORS.HLP vbasic/gen/HELP/TUTORIAL.HLP vbasic/gen/HELP/EDITOR.HLP \
+	vbasic/gen/HELP/MANUAL.HLP "$V/HELP/"
+# the manual's reference card as a PDF (DECISIONS V99: tools/vbmanual.py)
+$PY tools/vbasic.py doc "$WORK/manual" >/dev/null || die "the manual (vbasic.py doc)"
+cp "$WORK/manual/VeraBASIC-reference-card.pdf" "$V/HELP/Reference card.pdf"
 X="$DEST/DOCUMENTS/VeraBASIC Examples"
 cp docs/vbasic/examples/notes.bas "$X/Notes.bas"
 cp docs/vbasic/examples/dice.bas "$X/Dice.bas"
@@ -120,6 +128,13 @@ cp docs/vbasic/examples/tiles.bas "$X/Tiles.bas"
 for i in 1 2 3 4 5 6 7; do
 	cp "tests/vbasic/ui/bird$i.bas" "$X/Bird Watch - tutorial step $i.bas"
 done
+# a made application (DECISIONS V99): Bird Watch, the tutorial's step 7 with
+# its APP lines and its own tile, made by vbasic.py app as File > Make
+# application... makes it; Garden.brd, its document, in /DOCUMENTS
+cp docs/vbasic/examples/birdwatch.bas "$X/Bird Watch.bas"
+$PY tools/vbasic.py app docs/vbasic/examples/birdwatch.bas --run "$V/APPS/VeraBASIC Run.cvt" \
+	-o "$V/APPS/Bird Watch.cvt" || die "Bird Watch, the application (vbasic.py app)"
+printf '42\n' > "$DEST/DOCUMENTS/Garden.brd"
 $PY tools/fontcvt.py testfonts "$WORK/fonts" >/dev/null || die "the fonts"
 cp "$WORK/fonts/Gate Sans.cvt" "$WORK/fonts/Gate Mono.cvt" "$V/FONTS/"
 $PY tools/mkwall.py -o "$V/WALLPAPERS/Dusk.cvt" --dusk 2>/dev/null || die "the wallpaper"
@@ -204,7 +219,8 @@ THE FOLDERS (DECISIONS V71)
                       Preferences > Desktop chooses one, or a plain colour,
                       or a pattern.
                       Your own: tools/mkwall.py picture.jpg (in the SDK)
-  /VERANDA/HELP       VeraBASIC's help files (F1 in the editor)
+  /VERANDA/HELP       VeraBASIC's help files (F1 in the editor), the manual
+                      in help form, Reference card.pdf
   /VERANDA/.SYSTEM    hidden: the settings, alarms, the clipboard, the Note
                       File, the albums, the shell's desk file, the trash
   /DOCUMENTS          your files: where the shell opens and programs save
@@ -219,11 +235,19 @@ Veranda Edit, .MOD MOD Player, .SID SID Player, .D64 .D71 .D81 Archive,
 .TEL Term, .BMP View, .BAS VeraBASIC). BASIC (keep Veranda): back with
 SYS 35328, or LOAD"RBOOT" and RUN (in /VERANDA).
 
+VERANDA FTP
+  An FTP client through TexElec's Serial & ESP32 Network Card (its Wi-Fi
+  modem): the card and a server side by side. Connection > Sites... saves
+  servers in /VERANDA/.SYSTEM/FTP.SITES; the passwords there are stored
+  as plain text.
+
 VERABASIC
   VeraBASIC is a BASIC with Veranda's windows, menus, dialogs and files:
   the editor (VeraBASIC: write, Check with Ctrl+K, Run with Ctrl+R, F1 for
   help) and VeraBASIC Run for finished programs. Example programs and the
-  tutorial's seven steps are in /DOCUMENTS/VeraBASIC Examples.
+  tutorial's seven steps are in /DOCUMENTS/VeraBASIC Examples. File > Make
+  application... turns a program into an application of its own: Bird
+  Watch in /VERANDA/APPS is one (it opens Garden.brd in /DOCUMENTS).
 
 A CARD FROM BEFORE (everything in /VERANDA)
   Copy this package's VERANDA folder over the card's (replace the files)

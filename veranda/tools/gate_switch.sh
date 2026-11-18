@@ -24,7 +24,7 @@
 # 4. the shell's dock (tests/dock_script.py; gate part 2)
 set -e
 cd "$(dirname "$0")/.."
-OUT=build/gate/switch
+OUT=${OUT:-build/gate/switch}
 PY="python3 -I -B"
 EMU=${EMU:-$HOME/Projects/x16-emulator/build/x16emu}
 ROM=${ROM:-$HOME/Projects/x16-rom/build/x16/rom.bin}

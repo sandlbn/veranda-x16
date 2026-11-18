@@ -63,7 +63,10 @@ second parser), UTF-8, XMODEM upload, ZMODEM.
 
 ## The serial port
 
-`ser.s` is Veranda's `intFirstVector` (DECISIONS V41): every interrupt
+The driver is the SDK's (`vrser.h`: `vrser.s` and `vrserc.c` in
+`veranda.lib`, the modem's rate `vrsync.c` compiled into overlay 2;
+DECISIONS V98: Term's own `ser.s` and `ser_*` functions moved there, and
+vrnet shares them). Its `SerIrq` is Veranda's `intFirstVector` (DECISIONS V41): every interrupt
 reaches it first. It reads the UART's FIFO into an 8 KB ring in a RAM bank
 and refills the transmit FIFO from a 256-byte ring, on VERA's line
 interrupt (lines 60, 120 ... 420: with the frame's own, eight times a

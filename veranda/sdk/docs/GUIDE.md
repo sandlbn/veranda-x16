@@ -866,4 +866,5 @@ int main(void)
   `TOO_NEW`.
 
 For the details of every call (its registers, flags and errors), see
-`API.md`.
+`API.md`. For the network (TCP connections through the Wi-Fi modem of
+TexElec's Serial & ESP32 Network Card: `vrnet.h`), see `NET.md`.

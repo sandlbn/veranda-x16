@@ -8,9 +8,12 @@ plain `.bas` text file; the editor *VeraBASIC* runs it, *VeraBASIC Run*
 runs finished programs, and *Make application* turns one into a program
 of its own.
 
-This is the manual as far as phase 6 (docs/DECISIONS.md V85-V90, V93, V97). The
-reference is generated and complete; the chapters are written in the
-phases named below. In these pages a keyword written as `{PRINT}` is
+This is the whole manual (docs/DECISIONS.md V85-V90, V93, V97, V99). The
+reference is generated; the chapters were written in the phases named
+below. `vbasic.py doc OUTDIR` makes it into HTML (a page a chapter) and
+one PDF, and the reference card into a two-page PDF (docs/vbasic/TOOLS.md);
+on the card it is `/VERANDA/HELP/MANUAL.HLP` (Help > Contents > Manual in
+the editor) and `Reference card.pdf`. In these pages a keyword written as `{PRINT}` is
 checked against the keyword table when the manual is generated, so a
 renamed keyword breaks the build, not the manual.
 
@@ -24,13 +27,15 @@ renamed keyword breaks the build, not the manual.
 | [4. Tutorial: a windowed app in an hour](tutorial.md) | seven steps to *Bird Watch*: a window, menus, a counter, a timer, the mouse, colour and keys, sound | **3** |
 | [5. The editor](editor.md) | the window and its status bar, colours, typing and Return's indentation, files with long names, Check and F8, Run and Stop, the error jumps, Format, F1 and the help viewer | **5** |
 | [6. Debugging](debugging.md) | breakpoints and `{STOP}`, the pane: the call stack, the variables (an array's elements, a value changed), watches; Step, Step over, Step out; the program's screen kept; `{TRON}` and the trace pane; the error messages | **6** |
-| 7. Making applications | the `{APP}` lines, tiles, documents, `{APP}` `{STAY}` | 7 |
-| 8. Coming from V2 BASIC | `vbasic.py import`, what differs | 2 |
+| [4. Events and the program model](events.md) | the main lines and the handlers, the queue, what an event knows, errors in handlers, put aside, a program's end | **7** |
+| [7. Making applications](making-apps.md) | what an application is, the `{APP}` lines, tiles, documents and `{DOCUMENT$}`, *File > Make application...* and `vbasic.py app`, Bird Watch | **7** |
+| [8. Coming from V2 BASIC](from-v2.md) | `vbasic.py import`, what differs, speed | **7** |
 | [The language reference](reference.md) | every keyword and constant: syntax, text, example, the kernel calls | **0: generated** |
-| [Appendix: tokens](tokens.md) | the token list | **0: generated** |
+| [Appendix B: tokens](tokens.md) | the token list | **0: generated** |
 | [The reference card](refcard.md) | every statement and function on a line, the operators, the errors (version 0) | **1: generated** |
-| Appendix: error messages | in [The language](language.md#211-errors); the editor's form in [Debugging](debugging.md#error-messages); each error's page: `ERRORS.HLP` (generated) | **1**, 6 |
-| Appendix: memory limits; the ROM's maths | in [The language](language.md#213-memory-and-speed) | **1** |
+| [Appendix A: error messages](appendix-errors.md) | every run-time error, what it means; Check's messages (generated, as `ERRORS.HLP`) | **7: generated** |
+| [Appendix C: memory limits](appendix-limits.md) | a program's limits, RAM banks at 512 KB, main RAM | **7** |
+| [Appendix D: the ROM's maths](appendix-maths.md) | the floats, called not copied, what the runtime does itself | **7** |
 
 The formats are in [../FORMAT.md](../FORMAT.md), the PC tools in
 [../TOOLS.md](../TOOLS.md).

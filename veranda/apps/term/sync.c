@@ -12,7 +12,8 @@
    rate than settings/B, "ATB<rate>" moves the modem to B (it answers at
    the new rate) and the UART follows once the command has left the
    chip. Nothing answers (no modem, or it is online): the UART stays at
-   B. A dial typed meanwhile waits (net.c: dialing 4).
+   B. A dial typed meanwhile waits (net.c: dialing 4). The steps
+   themselves are the SDK's now (vrsync.c, shared with vrnet: V98).
 
    Also here, out of the resident program for room (V94): the date and
    time read from a line (net.c's modem_line), the time zone and the day
@@ -26,64 +27,30 @@
 #include "term.h"
 #include "net.h"
 
-static const unsigned char sync_try[] = { 8, 7, 6, 5, 4 };  /* bauds[]: 115200 ... 9600 */
-static unsigned char sync_i;
-static unsigned int stimer;
-static char cmd[12];
-
-static void sync_at(void)
-{
-    uart_rate(sync_try[sync_i]);
-    got_ok = 0;
-    net_mlen = 0;
-    sends("AT");
-    ser_byte(13);
-    stimer = ser_frames;
-    syncing = 1;
-}
-
+/* the sync itself is the SDK's (vrser.h's ser_sync, vrsync.c, compiled
+   into this overlay too: V98); here Term's side of it: its line reader
+   (net.c's modem_line sets got_ok) and its flags */
 void o_sync(void)
 {
     syncing = 0;
     if (ser_on != 1 || online || dialing == 3)
         return;
-    sync_i = 0;
-    sync_at();
+    got_ok = 0;
+    ser_sync(xtals[cfg.xtal], bauds[cfg.baud]);
+    syncing = 1;
 }
 
 /* 1: done (the UART at B, the modem too if it answered) */
 unsigned char o_sync_tick(void)
 {
-    unsigned int t = ser_frames;
-    if (syncing == 1) {
-        if (got_ok) {
-            if (sync_try[sync_i] == cfg.baud)
-                goto done;
-            *put_str(put_num(put_str(cmd, "ATB"), bauds[cfg.baud]), "00") = 0;
-            sends(cmd);
-            ser_byte(13);
-            stimer = t;
-            syncing = 2;
-        } else if (t - stimer > 30) {
-            if (++sync_i < sizeof sync_try)
-                sync_at();
-            else {
-                uart_rate(cfg.baud);    /* nothing answered */
-                goto done;
-            }
-        }
-    } else if (syncing == 2) {          /* ATB has left the chip (TEMT): B */
-        if ((ser_txhead == ser_txtail && (*(volatile unsigned char *)(0x9F05 + cfg.port) & 0x40))
-            || t - stimer > 60) {
-            uart_rate(cfg.baud);
-            got_ok = 0;
-            stimer = t;
-            syncing = 3;
-        }
-    } else if (got_ok || t - stimer > 60)
-        goto done;
-    return 0;
-done:
+    unsigned char r = ser_sync_tick(got_ok);
+    got_ok = 0;
+    if (ser_sync_new) {         /* (a new rate: the line read afresh) */
+        ser_sync_new = 0;
+        net_mlen = 0;
+    }
+    if (!r)
+        return 0;
     syncing = 0;
     return 1;
 }

@@ -3,7 +3,7 @@
 
    The help is plain Latin-1 text in /VERANDA/HELP (VR_HELPDIR; the top
    folder when there is none): KEYWORDS.HLP (tools/vbgen.py, from
-   vbasic/keywords.tbl), TUTORIAL.HLP, ERRORS.HLP, EDITOR.HLP. Its markup
+   vbasic/keywords.tbl), TUTORIAL.HLP, ERRORS.HLP, EDITOR.HLP, MANUAL.HLP (V99). Its markup
    (docs/vbasic/FORMAT.md): "= Name" starts a page, "@Word" and "@{A few
    words}" are links to pages, lines indented are code. A file is read
    into RAM banks the first time it is wanted (and given back before a
@@ -22,7 +22,8 @@
 #include <vrwin.h>
 #include "ide.h"
 
-static const char *const files[HF_N] = { "KEYWORDS.HLP", "TUTORIAL.HLP", "ERRORS.HLP", "EDITOR.HLP" };
+static const char *const files[HF_N] = { "KEYWORDS.HLP", "TUTORIAL.HLP", "ERRORS.HLP", "EDITOR.HLP",
+    "MANUAL.HLP" };
 static unsigned char fbank[HF_N];       /* a file's run of banks (0: not read) */
 static unsigned int flen[HF_N];
 static unsigned char cur_f;             /* the page's file */
@@ -80,7 +81,10 @@ static unsigned char fload(unsigned char f)
         doc_dir();
         return 0;
     }
-    for (n = 8; n && !(fbank[f] = BankAlloc(n)); --n)
+    n = (unsigned char)(FSize(h) >> 13) + 1;    /* (the banks it needs, no more: DECISIONS V99, */
+    if (n > 8)                          /* MANUAL.HLP beside KEYWORDS.HLP at rest) */
+        n = 8;
+    for (; n && !(fbank[f] = BankAlloc(n)); --n)
         ;
     flen[f] = 0;
     if (fbank[f])
@@ -307,9 +311,15 @@ static unsigned char open_page(unsigned char f)
     unsigned char g;
     if (!find_page(f)) {
         for (g = 0; g < HF_N; ++g)
-            if (g != f && find_page(g)) {
-                f = g;
-                goto found;
+            if (g != f) {
+                if (find_page(g)) {
+                    f = g;
+                    goto found;
+                }
+                if (g != cur_f && fbank[g]) {   /* (not there: its banks back, so that the next */
+                    BankFree(fbank[g]);         /* file has them: DECISIONS V99, MANUAL.HLP) */
+                    fbank[g] = 0;
+                }
             }
         return 0;
     }
