@@ -95,6 +95,23 @@ extern unsigned int vt_after, vb_esrc, vt_erl;
 unsigned char ide_req, ide_res, ide_opts, ide_ovl1, edit_idle, test_log;
 unsigned char ide_banks[IDE_NBANKS];
 unsigned int ide_govec;
+/* the debugger (DECISIONS V97): vbdbg.s, overlay 12 (record 23) */
+unsigned char ide_step, ide_dbgo;
+extern unsigned char vx_dbg, vb_dkept;
+void __fastcall__ vb_dbg(unsigned char service);
+#ifdef IDE_TEST
+unsigned char vb_dclks[12];             /* (Continue's time: vbdbg.s d_resume) */
+#endif
+#define D_MARK   0
+#define D_BREAK  1
+#define D_RESUME 2
+#define D_EVAL   3
+#define D_QUOTE  4
+#define D_END    5
+#define D_PAUSE  6
+#define D_FIRST  7
+#define D_TRON   8
+#define D_INIT   9
 #endif
 
 /* the code that runs once, or seldom (loading, the test's list, the
@@ -232,11 +249,13 @@ struct msgbox {
     unsigned char pos;
     unsigned char t1, x1, y1; const char *s1;
     unsigned char t2, x2, y2; const char *s2;
+    unsigned char t3, x3, y3; const char *s3;
     unsigned char ok, okx, oky;
     unsigned char end;
 };
 static struct msgbox box = { DEF_DB_POS | 1,
     DBTXTSTR, TXT_LN_X, TXT_LN_1_Y, 0, DBTXTSTR, TXT_LN_X, TXT_LN_2_Y, 0,
+    DBTXTSTR, TXT_LN_X, TXT_LN_3_Y, "",
     OK, DBI_X_2, DBI_Y_2, 0 };
 
 static void message(const char *a, const char *b)
@@ -244,6 +263,7 @@ static void message(const char *a, const char *b)
     box.s1 = a;
     box.s2 = b;
     DoDlgBox((void *)&box);
+    box.s3 = "";
 }
 
 static void m_about(void)
@@ -352,6 +372,9 @@ static const char *load_error;
 
 static void free_program(void)
 {
+#ifdef VB_IDE
+    vb_dbg(D_END);                      /* (the debugger's state bank) */
+#endif
     vx_end();                           /* its files closed, its sprites off */
     vb_free();
     if (pbase) BankFree(pbase);
@@ -499,9 +522,18 @@ made:
     vb_relbank = raw;
     vb_reln = s2 / 4;
     vb_rewrite();
-    if (srcmode)
+    if (srcmode) {
+#ifdef VB_IDE
+        /* (the editor keeps record 0, the names, for the debugger: it
+           gives the bank back itself) */
+        b = recb[0];
+        recb[0] = 0;
         runs_free();
-    else {
+        recb[0] = b;
+#else
+        runs_free();
+#endif
+    } else {
         BankFree(raw);
         CloseRecordFile();
     }
@@ -600,25 +632,22 @@ static unsigned char ide_wait, ide_click;   /* the end shown: a key or a click g
 extern char vb_errmsg[];
 
 /* main RAM's [_ide_s0, _ide_s1) and the three banks ide_es (8191 bytes
-   each: the records 12-14 were loaded there) change places, 1 KB at a
-   time through main RAM's room for names (free: no program is loaded) */
-#define XCH 1024
+   each: the records 12-14 were loaded there) change places: the
+   debugger's exchange routine (vbdbg.s pic, position-independent, from
+   overlay 12's bank into inbuf: DECISIONS V97; before it 1 KB at a time
+   through main RAM's room for names, BankCopy and memcpy, 8 times slower) */
+extern unsigned char vb_pic[], vb_picn[], vb_inbuf[];
 static void ide_swap(void)
 {
-    unsigned char *t = (unsigned char *)dynbase;
-    unsigned int off, n, o, e;
+    unsigned int off;
     unsigned char i;
-    for (i = 0, off = 0; off < ide_ss; ++i)
-        for (o = 0, e = off + 8191; off < e && off < ide_ss; off += n, o += n) {
-            n = ide_ss - off;
-            if (n > e - off)
-                n = e - off;
-            if (n > XCH)
-                n = XCH;
-            memcpy(t, ide_s0 + off, n);
-            BankCopy((void *)(0xA000 + o), ide_s0 + off, n, ide_es[i], 0);
-            BankCopy(t, (void *)(0xA000 + o), n, 0, ide_es[i]);
-        }
+    BankCopy(vb_pic, vb_inbuf, (unsigned int)vb_picn, vx_dbg, 0);
+    for (i = 0, off = 0; off < ide_ss; ++i, off += 8191) {
+        r0 = (unsigned int)(ide_s0 + off);
+        r1 = 0xA000;
+        r2 = ide_ss - off > 8191 ? 8191 : ide_ss - off;
+        ((void __fastcall__ (*)(unsigned char))vb_inbuf)(ide_es[i]);
+    }
 }
 
 /* the screen in the run ide_sb: 480 rows of 80 bytes, then 60 rows of
@@ -673,13 +702,14 @@ static void scr_save(void)
 }
 
 /* the editor's screen back: 1 if it was there */
+static unsigned char ide_brk;               /* the debugger's break: the program's screen on the back one */
 static unsigned char scr_back(void)
 {
     unsigned char *m = (unsigned char *)dynbase;
     unsigned int y, k;
     if (!ide_sb)
         return 0;
-    dispBufferOn = ST_WR_FORE | ST_WR_BACK;
+    dispBufferOn = ide_brk ? ST_WR_FORE : ST_WR_FORE | ST_WR_BACK;
     clipOn = 0;
     theme_palette();
     for (y = 0; y < 480; y += SCR_N) {
@@ -701,7 +731,8 @@ static unsigned char scr_back(void)
 
 static void ide_back(void)
 {
-    ide_req = scr_back();               /* (LOW: 1 the screen is the editor's as it was) */
+    ide_req = ide_brk == 2 ? 1 : scr_back();    /* (LOW: 1 the screen is the editor's as it was) */
+    ide_brk = 0;
     asm("sei");
     intTopVector = 0;
     asm("cli");
@@ -731,6 +762,12 @@ static void ide_endwait(void)
 void ide_go(void)
 {
     unsigned char r = ide_req;
+#ifdef IDE_TEST
+    vb_dclks[0] = *(volatile unsigned char *)0x9FB8;    /* (the emulator's clock) */
+    vb_dclks[1] = *(volatile unsigned char *)0x9FB9;
+    vb_dclks[2] = *(volatile unsigned char *)0x9FBA;
+    vb_dclks[3] = *(volatile unsigned char *)0x9FBB;
+#endif
     ide_req = IR_NONE;
     ide_swap();
     asm("sei");
@@ -741,6 +778,26 @@ void ide_go(void)
     appMain = VR_FN(vb_slice);
     ide_wait = 0;
     ended = 1;
+    if (r >= IR_CONT) {                 /* the debugger (DECISIONS V97) */
+        ide_brk = 2;                    /* (the editor's screen stays) */
+        if (r == IR_EVAL) {
+            vb_dbg(D_EVAL);
+            ide_res = IA_EVAL;
+        } else if (r == IR_DEND) {
+            vb_state = 2;
+            free_program();
+            ide_res = IA_DEND;
+        } else {
+            ide_brk = 0;
+            theme_menus();              /* (the program's own: vbdbg.s) */
+            DoMenu((void *)&mbar, 0);
+            vb_dbg(D_RESUME);
+            ended = 0;
+            return;
+        }
+        ide_back();
+        return;
+    }
     if (r == IR_OUTPUT) {               /* the last program's console again */
         scr_save();
         dispBufferOn = ST_WR_FORE | ST_WR_BACK;
@@ -788,9 +845,14 @@ void ide_go(void)
     con_reset();
     con_flush();
     ended = 0;
-    if (load(docname))
+    if (load(docname)) {
         status(docname, "Running (Ctrl+C stops it)");
-    else {
+        vb_dbg(D_MARK);                 /* the breakpoints */
+        if (ide_dbgo & 1)
+            vb_dbg(D_TRON);
+        if (ide_step)
+            vb_dbg(D_FIRST);
+    } else {
         strcpy(vt_msg, load_error);
         ide_res = IA_LOAD;
         vb_state = 2;
@@ -1042,6 +1104,64 @@ static void test_main(void)
 }
 #endif
 
+#if !defined(VB_IDE) && !defined(VB_TEST)
+extern char vb_errmsg[];
+/* the program's name, "Error 11 in line 3:" and "Division by zero" (or
+   "Stopped in line 3"), each cut to what the box's width shows (30
+   characters of the UI font) */
+#define BOXW 30
+static char *put_s(char *p, const char *s)
+{
+    while (*s)
+        *p++ = *s++;
+    return p;
+}
+
+/* (by subtraction: no division of cc65's runtime in main RAM) */
+static const unsigned int pow10[5] = { 10000, 1000, 100, 10, 1 };
+static char *put_u(char *p, unsigned int n)
+{
+    unsigned char i, d, any = 0;
+    for (i = 0; i < 5; ++i) {
+        for (d = '0'; n >= pow10[i]; ++d)
+            n -= pow10[i];
+        if (d != '0' || any || i == 4) {
+            *p++ = d;
+            any = 1;
+        }
+    }
+    return p;
+}
+
+static void stop_box(char *line)
+{
+    char *p = line, *what = title;      /* (title: the window's, done with) */
+    unsigned char n;
+    for (n = 0; docname[n] && n < BOXW - 3; ++n)
+        line[n] = docname[n];
+    if (docname[n])
+        p = put_s(line + n, "...");
+    else
+        p = line + n;
+    *p = 0;
+    p = what;
+    if (vb_errno == 1)
+        p = put_u(put_s(p, "Stopped in line "), vb_erl);
+    else {
+        p = put_u(put_s(p, "Error "), vb_errno);
+        p = put_u(put_s(p, " in line "), vb_erl);
+        *p++ = ':';
+        *p++ = 0;
+        box.s3 = p;                     /* (the third line: its words) */
+        for (n = 0; vb_errmsg[n] && n < BOXW; ++n)
+            *p++ = vb_errmsg[n];
+    }
+    *p = 0;
+    message(line, what);
+}
+
+#endif
+
 /* appMain while no program runs: the console drawn, the end shown */
 void vb_idle(void)
 {
@@ -1051,6 +1171,23 @@ void vb_idle(void)
     con_flush();
 #ifdef VB_IDE
     edit_idle = 1;                      /* (the test's player) */
+    if (vb_state == 3) {                /* the debugger stopped it (DECISIONS V97) */
+        vb_dbg(D_BREAK);
+        if (vb_dkept) {
+            vb_state = 4;               /* (stopped: shown in the editor) */
+            ide_res = IA_BREAK;
+            ide_brk = 1;
+            ide_back();
+            return;
+        }
+        vb_state = 2;                   /* (no bank for its state: it ends) */
+        ended = 1;
+        free_program();
+        ide_res = IA_LOAD;
+        strcpy(vt_msg, "Not enough memory (RAM banks) to stop it there.");
+        ide_back();
+        return;
+    }
     if (vb_state != 2)
         return;
     if (ended) {
@@ -1061,6 +1198,8 @@ void vb_idle(void)
         return;
     }
     ended = 1;
+    if (vb_how == 1 && vb_errno != 1)
+        vb_dbg(D_QUOTE);                /* the statement, for the editor's message */
     free_program();
     if (vb_how == 1) {                  /* an error, or Ctrl+C: its line (vb_esrc) */
         ide_res = vb_errno == 1 ? IA_STOP : IA_RTERR;
@@ -1112,10 +1251,11 @@ void vb_idle(void)
         EnterDeskTop();
     }
     if (vb_how == 1) {
+        /* the box says what the console's last line says, in words that
+           fit it (DECISIONS V97: the console may be under the windows) */
         status("The program stopped with an error.", "");
         PlaySound(SND_ERROR);
-        strcpy(line, docname);
-        message(line, "stopped with an error: see the console.");
+        stop_box(line);
         EnterDeskTop();
     }
     if (vb_how == 3) {                  /* not loaded: an error in its text, or the file */
@@ -1187,7 +1327,9 @@ static void init(unsigned char opts)
         for (i = 0; i < 3; ++i)
             ide_es[i] = ovl(IDE_REC_LOW + i);
         for (i = 0; i < IDE_NBANKS; ++i)
-            ide_banks[i] = ovl(IDE_REC_BANK + i);
+            ide_banks[i] = ovl(i < 8 ? IDE_REC_BANK + i : IDE_REC_DBG + 1);
+        vx_dbg = ovl(IDE_REC_DBG);
+        vb_dbg(D_INIT);                 /* (its variables cleared) */
         ide_ss = ide_s1 - ide_s0;
         vb_state = 2;
         ended = 1;

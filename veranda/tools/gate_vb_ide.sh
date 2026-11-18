@@ -88,7 +88,7 @@ low=$(( 16#$lowend - 16#$s0 + 1 ))
 place=$(( 16#$s1 - 16#$s0 ))
 [ "$low" -le "$place" ] || fail "the editor's main RAM part: $low bytes, its place $place"
 sizes=""
-for n in 1 2 3 4 5 6 7 8 9; do
+for n in 1 2 3 4 5 6 7 8 9 12; do
 	e=$(seg "$M" "OVL${n}BSS" | cut -d' ' -f2)
 	[ -n "$e" ] || e=$(seg "$M" "OVERLAY$n" | cut -d' ' -f2)
 	s=$(( 16#$e - 0xA000 + 1 ))
@@ -96,7 +96,7 @@ for n in 1 2 3 4 5 6 7 8 9; do
 	sizes="$sizes $n:$s"
 done
 banks=""
-for n in 1 2 3 4 5 6 7 8; do
+for n in 1 2 3 4 5 6 7 8 9; do
 	e=0
 	for sg in B${n}CODE B${n}RO B${n}BSS; do
 		x=$(seg "$OUT/app/ide/ide.map" $sg | cut -d' ' -f2)

@@ -11,7 +11,8 @@
 #                   files, dialogs, the clipboard, icons, tiles, sprites), gate_vb_sdk.sh
 #                   (vr_tile in the SDK; gates sdk, shell, edit), gate_vb_ide.sh (VeraBASIC, the
 #                   editor: apps/vbasic make ide; textkit, gate edit), gate_vb_quit.sh (every
-#                   example started from the shell and quit every way: the shell comes back)
+#                   example started from the shell and quit every way: the shell comes back),
+#                   gate_vb_debug.sh (the debugger: breaks, steps, the pane, the screen kept, TRON)
 all:
 	python3 -I -B tools/kbuild.py
 

@@ -29,6 +29,7 @@ VeraBASIC keywords, by group. F1 on a word in the editor opens its page.
 @Constants
 
 Every keyword: @Index. Learning: @Tutorial. The editor's keys: @{The editor}.
+The debugger: @Debugging.
 The run-time errors: @Errors.
 
 = Index

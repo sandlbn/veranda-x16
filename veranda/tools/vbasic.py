@@ -5,7 +5,7 @@ usage: vbasic.py check FILE.bas...             structural errors as file:line: m
        vbasic.py build FILE.bas -o OUT.cvt     the program document VeraBASIC Run opens
        vbasic.py list FILE.cvt                 a program document as source
        vbasic.py canon FILE.bas                the canonical form
-       vbasic.py run FILE.bas|FILE.cvt [--rom ROM] [--input KEYS] [--log] [--replay LOG] [--dir DIR]
+       vbasic.py run FILE.bas|FILE.cvt [--rom ROM] [--input KEYS] [--log] [--trace] [--replay LOG] [--dir DIR]
                                                the reference interpreter
 
 run is the reference interpreter (DECISIONS V86), the oracle gates vb_core
@@ -18,7 +18,10 @@ build logs them, then "VB END" or the error). Floats are the X16 ROM's:
 with --rom (or $VB_ROM) it runs the ROM's own maths routines in a small
 emulator (tools/vbrom.py), bit for bit as the runtime calls them; without a
 ROM image the floats are approximated with the PC's (marked "approx").
---input gives the keys typed (a file; a line end is Return). The files and
+--input gives the keys typed (a file; a line end is Return). --trace writes
+TRON's trace ("VB TRON n": each line entered, its number or its source
+line) without --log too: the debugger's trace pane (DECISIONS V97) is
+compared with it. The files and
 folders of part 2 (V90, tools/vbveranda2.py) are real: --dir DIR is the
 card's top folder for them (the current folder by default), so a gate
 compares what Run wrote with what the reference wrote, byte for byte.
@@ -331,6 +334,7 @@ class Interp(V.VerandaMixin, V2.Veranda2Mixin):
         self.code = recs[1]
         self.keys = bytearray(keys)
         self.log = log
+        self.trace_out = False
         self.out = out or sys.stdout
         self.syms = prog.syms
         self.cells = []
@@ -1192,7 +1196,7 @@ class Interp(V.VerandaMixin, V2.Veranda2Mixin):
             self.trace(rec)
 
     def trace(self, rec):
-        if self.log:
+        if self.log or self.trace_out:
             self.x_out('VB TRON %d' % self.line_label(rec))
 
     def line_target(self, at):
@@ -2145,9 +2149,10 @@ def maths_for(rom):
     return PCMaths()
 
 
-def run_program(prog, maths, keys=b'', log=False, out=None, replay=None, root=None):
+def run_program(prog, maths, keys=b'', log=False, out=None, replay=None, root=None, trace=False):
     sys.setrecursionlimit(20000)
     it = Interp(prog, maths, keys, log, out, replay, root)
+    it.trace_out = trace
     how = it.main()
     if log:
         (out or sys.stdout).write('VB %s\n' % how)
@@ -2173,8 +2178,8 @@ def main(argv):
         if args[i] in ('-o', '--rom', '--input', '--replay', '--dir'):
             opts[args[i]] = args[i + 1]
             i += 2
-        elif args[i] == '--log':
-            opts['--log'] = True
+        elif args[i] in ('--log', '--trace'):
+            opts[args[i]] = True
             i += 1
         else:
             rest.append(args[i])
@@ -2191,7 +2196,8 @@ def main(argv):
         keys = open(opts['--input'], 'rb').read() if '--input' in opts else b''
         m = maths_for(opts.get('--rom'))
         rp = replay_lines(opts['--replay']) if '--replay' in opts else None
-        how = run_program(prog, m, keys, opts.get('--log', False), replay=rp, root=opts.get('--dir'))
+        how = run_program(prog, m, keys, opts.get('--log', False), replay=rp, root=opts.get('--dir'),
+                          trace=opts.get('--trace', False))
         if m.approx and not opts.get('--log'):
             print('(floats approximated: no ROM image given, --rom or VB_ROM)', file=sys.stderr)
         return 0 if how == 'END' else 1

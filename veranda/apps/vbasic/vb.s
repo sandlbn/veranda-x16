@@ -96,6 +96,13 @@ _vb_erl: .res 2
 .ifdef VB_IDE
 _vb_esrc: .res 2        ; (the editor) the error's source line
 .export _vb_esrc
+_vb_eproc: .res 1       ; (the editor) the procedure an error was raised in ($FF the main lines)
+.export _vb_eproc
+_vx_dbg: .res 1         ; (the editor) the debugger's overlay (vbdbg.s: record 23)
+.export _vx_dbg
+dlhdr:	.res 6          ; the debugger: the line record's head (trace)
+dbgtrap: .res 1         ; 1: an error goes back to the debugger (dbg_trapped)
+dbgsp:	.res 1
 .endif
 _vb_test: .res 1
 _vb_stopreq: .res 1
@@ -122,9 +129,9 @@ sipb:	.res 1
 vbase:	.res 1          ; the value stack's bottom for this procedure level
 tbase:	.res 1          ; the temporaries' bottom likewise
 errmsg:	.res 64         ; ERR$
-.ifdef VB_IDE
 _vb_errmsg = errmsg
 .export _vb_errmsg
+.ifdef VB_IDE
 .import _edit_idle
 .endif
 errfile: .res 1
@@ -1113,7 +1120,15 @@ raise:	sta errno
 	lda #<err_fetch         ; ERR$: its message (from overlay 1)
 	ldx #>err_fetch
 	jsr ovl_call
-raise2:	ldx sp0
+raise2:
+.ifdef VB_IDE
+	lda dbgtrap             ; (the debugger evaluating: back to it)
+	beq @nt
+	jmp dbg_trapped
+@nt:	lda cproc
+	sta _vb_eproc
+.endif
+	ldx sp0
 	txs
 	stz romkeep
 	stz rom_bank
@@ -1375,10 +1390,36 @@ fe_s:	.word 0
 fe_r:	.word 0
 fe_e:	.word 0
 
-; TRON: "VB TRON n" for the line record at ip (a record's first byte)
-trace:	lda _vb_test
-	beq @r
-	ldy #1
+; TRON: "VB TRON n" for the line record at ip (a record's first byte);
+; VeraBASIC Run alone: "TRON n" by LogText (DECISIONS V97). The editor
+; (VB_IDE): the debugger's line hook (vbdbg.s dbg_line: the trace pane,
+; breakpoints, steps), the record's head copied for it first
+.ifdef VB_IDE
+trace:	ldy #5
+@h:	lda (ip),y
+	sta dlhdr,y
+	dey
+	bpl @h
+	lda #<dbg_line
+	ldx #>dbg_line
+	ldy _vx_dbg
+	jmp bcall
+
+; an error while the debugger evaluates (raise2, dbgtrap): back to the
+; debugger's call (vbdbg.s dtry), carry set
+dbg_trapped:
+	stz romkeep
+	stz rom_bank
+	cli
+	stz dbgtrap
+	ldx dbgsp
+	txs
+	lda _vx_dbg
+	sta ram_bank
+	sec
+	rts
+.else
+trace:	ldy #1
 	lda (ip),y
 	sta t0
 	iny
@@ -1392,7 +1433,15 @@ trace:	lda _vb_test
 	iny
 	lda (ip),y
 	sta t1
-@n:	ldx #0
+@n:
+.ifndef VB_TEST
+	lda _vb_test
+	bne @t
+	lda #<tron_log          ; (VeraBASIC Run: LogText, overlay 1)
+	ldx #>tron_log
+	jmp ovl_call
+.endif
+@t:	ldx #0
 @m:	lda MTron,x
 	beq @d
 	sta EMU_STDOUT
@@ -1409,7 +1458,35 @@ trace:	lda _vb_test
 	bra @o
 @e:	lda #10
 	sta EMU_STDOUT
-@r:	rts
+	rts
+
+; "TRON n" (t0, t1) to LogText (the emulator's console; nothing on
+; hardware): VeraBASIC Run's TRON (DECISIONS V97; the test build logs
+; "VB TRON n" itself)
+.ifndef VB_TEST
+.segment "OVERLAY1"
+tron_log:
+	lda t0
+	ldx t1
+	jsr int_to_text
+	ldx #0
+@c:	lda MTron+3,x
+	sta sbounce,x
+	beq @c2
+	inx
+	bra @c
+@c2:	ldy #0
+@c3:	lda numbuf,y
+	sta sbounce,x
+	beq @c4
+	inx
+	iny
+	bra @c3
+@c4:	LoadW r0, sbounce
+	jmp LogText
+.segment "CODE"
+.endif
+.endif
 
 ; the program stops (END, an error, the end of its lines)
 end_program:
@@ -3294,6 +3371,12 @@ to_errip:
 st_end:	jmp end_program
 
 st_stop:
+.ifdef VB_IDE
+	lda #<dbg_stop          ; (the editor: a break, DECISIONS V97)
+	ldx #>dbg_stop
+	ldy _vx_dbg
+	jmp bcall
+.endif
 	ERR E_STOP
 
 st_cont:
@@ -3368,13 +3451,16 @@ st_sys:	jsr eval
 	MAPP
 	rts
 
+; (tron: bit 0 TRON; bit 1 the editor's debugger has breakpoints, a step
+; or a pause armed: vbdbg.s; any bit set, each line entered calls trace)
 st_tron:
 	lda #1
-	sta tron
+	tsb tron
 	rts
 
 st_troff:
-	stz tron
+	lda #1
+	trb tron
 	rts
 
 st_wait:
@@ -4675,5 +4761,8 @@ st_syn:	ERR E_SYNTAX
 .include "vbgfx.s"
 .include "vbdlg.s"
 .include "vbfile.s"
+.ifdef VB_IDE
+.include "vbdbg.s"
+.endif
 .segment "CODE"
 _ide_s1:                ; (the interpreter's code ends)

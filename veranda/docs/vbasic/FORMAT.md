@@ -154,7 +154,7 @@ A program's token record (record 1) is a list of line records and a
 | length | 1 | the whole record, this byte to its `$00`: the next record is at this one + length |
 | line number | 2 | 0 = none |
 | source line | 2 | the line of the `.bas` file (1 is the first), for error jumps and breakpoints |
-| flags | 1 | bit 0 breakpoint (the editor's, never in a file), bit 1 a label line, bits 4-7 the indentation / 2 |
+| flags | 1 | bit 0 breakpoint (the editor's, never in a file: the runtime sets it in its copy before a run and at each Continue, from the editor's list, DECISIONS V97), bit 1 a label line, bits 4-7 the indentation / 2 |
 | tokens | n | at most 248 |
 | end | 1 | `$00` |
 

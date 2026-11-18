@@ -1,0 +1,57 @@
+; VeraBASIC, the debugger (DECISIONS V97): what it shares with the editor,
+; in overlay 12's own bank from DI_BASE
+; (ide/dbgshare.h has the same numbers: keep the two in step)
+DI_RING   = $B000
+DI_RN     = 200
+DI_RHEAD  = $B320
+DI_RCNT   = $B321
+DI_BPN    = $B322
+DI_BP     = $B324
+DI_BPMAX  = 32
+DI_INFO   = $B364
+DI_STACK  = $B384
+DI_STKN   = 12
+DI_REQN   = $B3D0
+DI_REQ    = $B3D1
+DI_REQEND = $B700
+DI_RES    = $B700
+DI_RESN   = 40
+DI_RESW   = 24
+DI_QUOTE  = $BAC0
+DI_SCR    = $BBC0
+DB_REASON = 0
+DB_SRC    = 1
+DB_LABEL  = 3
+DB_PROC   = 5
+DB_NSTK   = 6
+DB_DEEP   = 7
+DW_BP     = 1
+DW_STEP   = 2
+DW_STOP   = 3
+DW_PAUSE  = 4
+DW_START  = 5
+DR_VALUE  = 0
+DR_DIMS   = 1
+DR_SET    = 2
+DQ_ERRNO  = 0
+DQ_KERR   = 1
+DQ_PROC   = 2
+DQ_SRC    = 3
+DQ_LABEL  = 5
+DQ_OFF    = 7
+DQ_PBASE  = 9
+DQ_CELL   = 10
+DQ_N      = 12
+DQ_TOK    = 13
+DI_BASE   = $B000                ; (this overlay's code ends below it)
+; the services (vb_dbg: main.c)
+D_MARK    = 0
+D_BREAK   = 1
+D_RESUME  = 2
+D_EVAL    = 3
+D_QUOTE   = 4
+D_END     = 5
+D_PAUSE   = 6
+D_FIRST   = 7
+D_TRON    = 8
+D_INIT    = 9

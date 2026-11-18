@@ -8,7 +8,7 @@ plain `.bas` text file; the editor *VeraBASIC* runs it, *VeraBASIC Run*
 runs finished programs, and *Make application* turns one into a program
 of its own.
 
-This is the manual as far as phase 5 (docs/DECISIONS.md V85-V90, V93). The
+This is the manual as far as phase 6 (docs/DECISIONS.md V85-V90, V93, V97). The
 reference is generated and complete; the chapters are written in the
 phases named below. In these pages a keyword written as `{PRINT}` is
 checked against the keyword table when the manual is generated, so a
@@ -23,13 +23,13 @@ renamed keyword breaks the build, not the manual.
 | [Example programs](../examples) | *Notes* (Open and Save with long names, the clipboard), *Dice* (icons, a sprite, sounds), *Address book* (files, a `DIALOG`), *Tiles* (a page of tiles); each run by gate `vb_files` with a mouse script | **4** |
 | [4. Tutorial: a windowed app in an hour](tutorial.md) | seven steps to *Bird Watch*: a window, menus, a counter, a timer, the mouse, colour and keys, sound | **3** |
 | [5. The editor](editor.md) | the window and its status bar, colours, typing and Return's indentation, files with long names, Check and F8, Run and Stop, the error jumps, Format, F1 and the help viewer | **5** |
-| 6. Debugging | `{TRON}`, breakpoints, stepping, variables, the call stack | 6 |
+| [6. Debugging](debugging.md) | breakpoints and `{STOP}`, the pane: the call stack, the variables (an array's elements, a value changed), watches; Step, Step over, Step out; the program's screen kept; `{TRON}` and the trace pane; the error messages | **6** |
 | 7. Making applications | the `{APP}` lines, tiles, documents, `{APP}` `{STAY}` | 7 |
 | 8. Coming from V2 BASIC | `vbasic.py import`, what differs | 2 |
 | [The language reference](reference.md) | every keyword and constant: syntax, text, example, the kernel calls | **0: generated** |
 | [Appendix: tokens](tokens.md) | the token list | **0: generated** |
 | [The reference card](refcard.md) | every statement and function on a line, the operators, the errors (version 0) | **1: generated** |
-| Appendix: error messages | in [The language](language.md#211-errors) | **1** |
+| Appendix: error messages | in [The language](language.md#211-errors); the editor's form in [Debugging](debugging.md#error-messages); each error's page: `ERRORS.HLP` (generated) | **1**, 6 |
 | Appendix: memory limits; the ROM's maths | in [The language](language.md#213-memory-and-speed) | **1** |
 
 The formats are in [../FORMAT.md](../FORMAT.md), the PC tools in

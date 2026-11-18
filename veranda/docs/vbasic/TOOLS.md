@@ -28,7 +28,7 @@ bytes (G3).
     python3 -I vbasic.py list FILE.cvt
     python3 -I vbasic.py canon FILE.bas [-o OUT.bas]
     python3 -I vbasic.py dump FILE.bas
-    python3 -I vbasic.py run FILE.bas|FILE.cvt [--rom ROM] [--input KEYS] [--log] [--replay LOG] [--dir DIR]
+    python3 -I vbasic.py run FILE.bas|FILE.cvt [--rom ROM] [--input KEYS] [--log] [--trace] [--replay LOG] [--dir DIR]
 
 It needs `vbtokens.py`, `vbtokens_gen.py` and `vbrom.py` beside it, and
 for `build` the SDK's `vpack.py` and `vicon.py`. The exit status is 0
@@ -98,6 +98,7 @@ for a handler started at the program's d-th event point.
 | `--rom ROM` | an X16 ROM image (`rom.bin`); floats are then computed by the ROM's own maths routines (`vbrom.py`), the X16's to the last bit. `$VB_ROM` does the same. Without one the PC's floats are used and marked approximate |
 | `--input KEYS` | a file of the keys typed: a line of it is a line typed, for `INPUT` and `LINE INPUT` |
 | `--log` | the runtime's test-log form: `VB| line` for each console line, then `VB END`, `VB ERROR n` or `VB INPUT` (it waited for keys it did not get) |
+| `--trace` | `TRON`'s trace without `--log` too: `VB TRON n` for each line entered while it is on (its number, or its line in the text), among the console's lines; the editor's trace pane holds the last 200 of them (DECISIONS V97, gate `vb_debug`) |
 | `--replay LOG` | VeraBASIC Run's log of the same program: what only the machine knows comes from it (the functions' values: the pointer, the keys, the fonts' widths, the clock; the events, each at the event point where Run took it); everything else must then log the same, line for line. Without it the functions are 0 and a program waiting for events ends with `VB STUCK`. Part 2 (V90): the dialog boxes' answers (`VB= @nn ...`, a `DIALOG`'s fields and result), the folder the Open and Save dialog chose (`VB CD path`), the clipboard's text and `DIR$`'s names come from it too; a string's control characters, `\` and bytes from 127 on are logged as `\` and two hex digits |
 | `--dir DIR` | the folder that stands for the card's top folder: the program's files are made, read, renamed and removed there for real (part 2, `tools/vbveranda2.py`), so a gate compares the folder Run left with the reference's, file for file; the current folder by default |
 

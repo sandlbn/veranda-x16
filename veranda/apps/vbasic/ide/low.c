@@ -182,6 +182,7 @@ struct menu4 { unsigned char top, bottom; unsigned int left, right; unsigned cha
 struct menu5 { unsigned char top, bottom; unsigned int left, right; unsigned char flags; struct item i[5]; };
 struct menu6 { unsigned char top, bottom; unsigned int left, right; unsigned char flags; struct item i[6]; };
 struct menu7 { unsigned char top, bottom; unsigned int left, right; unsigned char flags; struct item i[7]; };
+struct menu12 { unsigned char top, bottom; unsigned int left, right; unsigned char flags; struct item i[12]; };
 #define IH 14
 struct menu1 mi_vb = { 14, 14 + 1 * IH, 0, 0, VERTICAL | 1, {
     { "About VeraBASIC", MENU_ACTION, mn_about } } };
@@ -195,9 +196,11 @@ struct menu7 mi_edit = { 14, 14 + 7 * IH, 0, 0, VERTICAL | 7, {
 struct menu5 mi_search = { 14, 14 + 5 * IH, 0, 0, VERTICAL | 5, {
     { 0, MENU_ACTION, mn_find }, { 0, MENU_ACTION, mn_findnext }, { 0, MENU_ACTION, mn_replnext },
     { 0, MENU_ACTION, mn_goto }, { 0, MENU_ACTION, mn_nexterr } } };
-struct menu4 mi_run = { 14, 14 + 4 * IH, 0, 0, VERTICAL | 4, {
+struct menu12 mi_run = { 14, 14 + 12 * IH, 0, 0, VERTICAL | 12, {
     { 0, MENU_ACTION, mn_run }, { 0, MENU_ACTION, mn_check }, { 0, MENU_ACTION, mn_stop },
-    { 0, MENU_ACTION, mn_output } } };
+    { 0, MENU_ACTION, mn_output }, { 0, MENU_ACTION, mn_cont }, { 0, MENU_ACTION, mn_step },
+    { 0, MENU_ACTION, mn_over }, { 0, MENU_ACTION, mn_out }, { 0, MENU_ACTION, mn_bp },
+    { 0, MENU_ACTION, mn_watch }, { 0, MENU_ACTION, mn_tron }, { 0, MENU_ACTION, mn_trace } } };
 struct menu5 mi_help = { 14, 14 + 5 * IH, 0, 0, VERTICAL | 5, {
     { 0, MENU_ACTION, mn_help }, { 0, MENU_ACTION, mn_contents }, { 0, MENU_ACTION, mn_index },
     { 0, MENU_ACTION, mn_tutorial }, { 0, MENU_ACTION, mn_errors } } };
@@ -206,7 +209,7 @@ struct menu6 mi_bar = { 0, 14, 0, 0, HORIZONTAL | UN_CONSTRAINED | 6, {
     { "Search", SUB_MENU, &mi_search }, { "Run", SUB_MENU, &mi_run }, { "Help", SUB_MENU, &mi_help } } };
 void *const ide_menubar = &mi_bar;
 unsigned int barx[6];                   /* the bar's items (the test's script) */
-char mi_text[600];                      /* the items' texts, one after the other (cmd_layout) */
+char mi_text[900];                      /* the items' texts, one after the other (cmd_layout) */
 
 void ide_redraw_menu(void)
 {
@@ -244,6 +247,44 @@ void ide_logn(const char *s, unsigned long n)
     (void)s;
     (void)n;
 #endif
+}
+
+/* the debugger (DECISIONS V97): its state, the breakpoints (their source
+   lines; B9 gives them to the debugger's DI_BP before a run) */
+unsigned char dbg_paused, pane, dfocus, bp_n, key_taken, pane_dirty;
+unsigned int press_y;
+unsigned int bp_line[32];
+
+unsigned int x_sym, x_off, rqn, trace_top;
+unsigned char x_proc, x_kind, x_ok, nv, nloc, nreq;
+
+/* DI (overlay 12's bank, dbgshare.h) and main RAM: n bytes (1-255; to
+   main RAM only below $A000) */
+void __fastcall__ dget(unsigned int at, void *to, unsigned char n)
+{
+    bg_bank = vx_dbg;
+    bg_at = (void *)at;
+    bg_to = to;
+    bg_n = n;
+    ide_bget();
+}
+
+void __fastcall__ dput(unsigned int at, const void *from, unsigned char n)
+{
+    bg_bank = vx_dbg;
+    bg_at = (void *)at;
+    bg_to = (void *)from;
+    bg_n = n;
+    ide_bput();
+}
+
+unsigned char __fastcall__ bp_has(unsigned int line)
+{
+    unsigned char i;
+    for (i = 0; i < bp_n; ++i)
+        if (bp_line[i] == line)
+            return 1;
+    return 0;
 }
 
 /* textkit's row hook (view.c in B_VIEW): the row coloured by B_LEX */

@@ -81,6 +81,16 @@ procs_off:
 	jsr InitProcesses       ; no processes
 @r:	rts
 
+; the debugger's break (vbdbg.s, DECISIONS V97): a = procs_on, the
+; process table taken away (o1_procs puts it back on Continue)
+.ifdef VB_IDE
+o1_brk:	lda procs_on
+	pha
+	jsr procs_off
+	pla
+	rts
+.endif
+
 ; o1tab[t0] = t1; o1_get: x = o1tab[t0]
 o1_set:	ldx t0
 	lda t1

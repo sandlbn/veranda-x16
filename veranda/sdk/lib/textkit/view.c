@@ -66,6 +66,9 @@ void view_frame(void)
     ColorRect(SBX, 1, TROW, ROWS, C_BAR);
     thumb_n = 0;
     cursor_on = 0;
+#ifdef TK_FRAME_HOOK
+    TK_FRAME_HOOK();
+#endif
 }
 
 void view_all(void)

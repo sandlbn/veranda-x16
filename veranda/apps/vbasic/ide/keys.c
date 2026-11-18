@@ -94,7 +94,8 @@ static void letter(unsigned char c, unsigned char sh)
     case 'o': mn_open(); break;
     case 's': if (sh) mn_saveas(); else mn_save(); break;
     case 'q': mn_quit(); break;
-    case 'r': mn_run(); break;
+    case 'r': if (dbg_paused) mn_cont(); else mn_run(); break;
+    case 'w': mn_watch(); break;
     case 'k': mn_check(); break;
     case 'b': move_to(gb_len, sh); break;      /* Ctrl+PgDn */
     }
@@ -106,6 +107,11 @@ void ide_key(void)
     if (help_open) {                    /* the help viewer's keys */
         XCALL(B_HELP, help_key);
         return;
+    }
+    if (pane >= 2 || (dfocus && pane == 1)) {   /* the debugger's pane (DECISIONS V97) */
+        XCALL(B_DBG, dbg_key);
+        if (key_taken)
+            return;
     }
     need_fix = 1;
     if (status_msg[0]) {                /* a message lasts until the next key */
@@ -193,6 +199,10 @@ void ide_key(void)
         mn_newline();
         return;
     case KEY_TAB:                       /* two blanks: VeraBASIC's indentation */
+        if (dbg_paused && pane == 1) {  /* (stopped: the keys to the pane) */
+            XCALL(B_DBG, dbg_focus);
+            return;
+        }
         type(' ');
         type(' ');
         return;
@@ -215,6 +225,30 @@ void ide_key(void)
     case KEY_F8:
         undo_run(0);
         mn_nexterr();
+        return;
+    case KEY_F6:                        /* the debugger (DECISIONS V97) */
+        undo_run(0);
+        mn_cont();
+        return;
+    case KEY_F7:
+        undo_run(0);
+        mn_step();
+        return;
+    case KEY_F9:
+        undo_run(0);
+        mn_bp();
+        return;
+    case KEY_F10:
+        undo_run(0);
+        mn_over();
+        return;
+    case KEY_F11:
+        undo_run(0);
+        mn_out();
+        return;
+    case KEY_F12:
+        undo_run(0);
+        mn_trace();
         return;
     case 0xA0:
         if (sh)
@@ -253,6 +287,11 @@ void ide_press(void)
     mouse_xy(&x, &y);
     need_fix = 1;
     undo_run(0);
+    if (pane && x >= PANE_X * 8 && x < SBX * 8 && y >= TY && y < TY + ROWS * 8) {
+        press_y = y;                    /* (the debugger's pane) */
+        XCALL(B_DBG, dbg_press);
+        return;
+    }
     if (view_hit(x, y, &p)) {
         sh = GetKeyMods() & 1;
         if (!sh && p == cur && !HAS_SEL() && dblClickCount) {
@@ -302,6 +341,31 @@ static void drag(void)
  ---------------------------------------------------------------*/
 static unsigned long last_ls = NOWHERE;
 static unsigned int last_col = 0xFFFF;
+static unsigned long last_n;
+
+/* lines added or taken away (by the cursor's line): the breakpoints
+   after them move with their lines (DECISIONS V97) */
+static void bp_follow(void)
+{
+    long d = (long)nlines - (long)last_n;
+    unsigned long c = cur_line + 1;
+    unsigned char i, j;
+    last_n = nlines;
+    if (!bp_n)
+        return;
+    for (i = j = 0; i < bp_n; ++i) {
+        if (d > 0 && bp_line[i] > c - d)
+            bp_line[i] += (unsigned int)d;
+        else if (d < 0 && bp_line[i] > c) {
+            if (bp_line[i] <= c - d)
+                continue;               /* (its line went) */
+            bp_line[i] -= (unsigned int)-d;
+        }
+        bp_line[j++] = bp_line[i];
+    }
+    bp_n = j;
+    memset(dirty, 1, ROWS);
+}
 
 static void state_log(void)
 {
@@ -343,6 +407,13 @@ void ide_tick(void)
                ? PTR_IBEAM : PTR_ARROW);
     if (pressFlag & SET_KEYPRESS)
         return;                         /* draw once the keys waiting are in */
+    if (nlines != last_n)
+        bp_follow();
+    if (pane_dirty) {
+        pane_dirty = 0;
+        if (pane)
+            XCALL(B_DBG, dbg_draw);
+    }
     if (need_fix) {
         need_fix = 0;
         if (cur_ls != last_ls || view_col() != last_col) {

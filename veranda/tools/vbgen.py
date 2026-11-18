@@ -765,6 +765,7 @@ def gen_hlp(groups, entries):
     for g in groups:
         L.append(hlp_link(g.title))
     L += ['', 'Every keyword: @Index. Learning: @Tutorial. The editor\'s keys: @{The editor}.',
+          'The debugger: @Debugging.',
           'The run-time errors: @Errors.', '']
     L.append('= Index')
     line = ''
@@ -984,7 +985,7 @@ def gen_tokens_md(kws):
 # (tools/vbasic.py ERRORS, the runtime's overlay 1 has the same texts) and
 # what it means
 ERROR_HELP = {
-    1: 'Ctrl+C, the STOP key, Run > Stop or a STOP statement stopped the program.',
+    1: 'Ctrl+C, the STOP key, Run > Stop or (in VeraBASIC Run) a STOP statement stopped the program. In the editor a STOP statement stops it as a breakpoint does, to go on (F6).',
     2: 'A statement the runtime could not read: a word missing or one too many.',
     3: 'RETURN came with no GOSUB to go back to.',
     4: 'READ found no more DATA items: the program read more than its DATA lines hold. RESTORE starts them again.',
@@ -1010,14 +1011,14 @@ ERROR_HELP = {
     24: 'FONT names a font that is not in /VERANDA/FONTS.',
     25: 'A window number with no WINDOW open.',
     26: 'More menus or menu items than Veranda\'s menu bar holds.',
-    50: 'No file of that name in the folder (ERRFILE: the kernel\'s error).',
+    50: 'No file of that name in the folder. The message has the kernel\'s error too, (kernel 5), as ERRFILE gives it.',
     51: 'More than three files open at once.',
     52: 'A file number outside 1 .. 255.',
     53: 'PRINT #, INPUT # or CLOSE of a file number that is not open.',
     54: 'OPEN of a file number that is open already.',
     55: 'A file opened for reading written to, or the other way round, or a mode other than "r", "w", "a", "m".',
     56: 'INPUT #, LINE INPUT # or GET # past the file\'s end: test EOF first.',
-    57: 'The card or the folder said no (ERRFILE: the kernel\'s error).',
+    57: 'The card or the folder said no. The message has the kernel\'s error too, (kernel n), as ERRFILE gives it.',
     58: 'A file or folder of that name is there already.',
     59: 'A picture string that is not one (PICTURE$ makes them).',
     60: 'LABEL, FIELD or BUTTON outside a DIALOG block.',
@@ -1037,9 +1038,13 @@ def gen_errors_hlp():
         if n not in ERROR_HELP:
             err('vbgen.py ERROR_HELP: no text for error %d (%s)' % (n, errs[n]))
     L = ['= Errors', 'The run-time errors: the editor shows one in the status bar, with its line',
-         'in red (Error 13: Type mismatch (line 57)); TRY ... CATCH and ON ERROR GOTO',
-         'catch them: ERR is the number, ERR$ the message, ERL the line. Check finds the',
-         'other kind before a program runs: see @{Check messages}.', '']
+         'in red, and whole in the pane at the right: the number and the message, a',
+         'file\'s kernel error, the line, the procedure, the statement as Format writes',
+         'it (Error 13, Type mismatch, in line 57 (SUB Tick): total% = name$); F1 there',
+         'opens its page. The console says Error 13, Type mismatch, in line 57.',
+         'TRY ... CATCH and ON ERROR GOTO catch them: ERR is the number, ERR$ the',
+         'message, ERL the line, ERRFILE the kernel\'s error. Check finds the other',
+         'kind before a program runs: see @{Check messages}. See also: @Debugging.', '']
     line = ''
     for n in sorted(errs):
         lk = '@{Error %d}' % n
@@ -1188,7 +1193,8 @@ def main(argv):
         'vbasic/gen/HELP/TUTORIAL.HLP': md_to_hlp(os.path.join(ROOT, 'docs', 'vbasic', 'manual', 'tutorial.md'),
                                                   'Tutorial'),
         'vbasic/gen/HELP/EDITOR.HLP': md_to_hlp(os.path.join(ROOT, 'docs', 'vbasic', 'manual', 'editor.md'),
-                                                'The editor'),
+                                                'The editor')
+        + '\n' + md_to_hlp(os.path.join(ROOT, 'docs', 'vbasic', 'manual', 'debugging.md'), 'Debugging'),
     }
     if errors:
         for e in errors:
